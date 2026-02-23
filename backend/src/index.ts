@@ -1,0 +1,125 @@
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
+import { initDatabase } from './db/database';
+import goalsRouter from './routes/goals';
+import subgoalsRouter from './routes/subgoals';
+import actionsRouter from './routes/actions';
+import userRouter from './routes/user';
+import logsRouter from './routes/logs';
+import authRouter from './routes/auth';
+import guestbookRouter from './routes/guestbook';
+import { requireAuth, optionalAuth } from './middleware/auth';
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json());
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'harada-method-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+  }
+}));
+
+// Initialize database
+initDatabase();
+
+// Routes
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Harada Method API is running' });
+});
+
+// Auth routes (no auth required)
+app.use('/api/auth', authRouter);
+
+// Root API documentation endpoint for AI agents (optional auth to show user-specific info)
+app.get('/api', optionalAuth, (req, res) => {
+  res.json({
+    name: 'Harada Method API',
+    description: 'API for Jacob Stokes\' Harada Method goal tracking system. The Harada Method is a Japanese goal-setting framework using nested 64-square grids.',
+    owner: 'Jacob Stokes',
+    structure: {
+      overview: 'Each user can have multiple primary goals. Each primary goal has 8 sub-goals. Each sub-goal has 8 action items. Progress is tracked via activity logs against action items.',
+      data_model: {
+        primary_goal: 'Main objective (e.g., "Become World-Class Developer")',
+        sub_goals: '8 supporting goals that contribute to the primary goal',
+        action_items: '8 specific actions for each sub-goal (64 total actions per primary goal)',
+        activity_logs: 'Continuous logging of activity, progress, notes against each action item'
+      }
+    },
+    endpoints: {
+      user_summary: {
+        method: 'GET',
+        path: '/api/user/summary',
+        description: 'Get complete overview of all goals, sub-goals, actions, and recent activity',
+        use_case: 'Best starting point for AI to understand current goals and progress'
+      },
+      goals: {
+        list: 'GET /api/goals - List all primary goals',
+        get: 'GET /api/goals/:id - Get specific goal with all sub-goals and actions',
+        create: 'POST /api/goals - Create new primary goal (body: {title, description?, target_date?})',
+        update: 'PUT /api/goals/:id - Update goal',
+        delete: 'DELETE /api/goals/:id - Delete goal'
+      },
+      subgoals: {
+        list: 'GET /api/subgoals/goal/:goalId - List sub-goals for a goal',
+        create: 'POST /api/subgoals/goal/:goalId - Create sub-goal (body: {position: 1-8, title})',
+        update: 'PUT /api/subgoals/:id - Update sub-goal',
+        delete: 'DELETE /api/subgoals/:id - Delete sub-goal'
+      },
+      actions: {
+        list: 'GET /api/actions/subgoal/:subgoalId - List actions for a sub-goal',
+        create: 'POST /api/actions/subgoal/:subgoalId - Create action (body: {position: 1-8, title})',
+        update: 'PUT /api/actions/:id - Update action',
+        delete: 'DELETE /api/actions/:id - Delete action'
+      },
+      logs: {
+        list: 'GET /api/logs/action/:actionId - Get activity logs for an action',
+        stats: 'GET /api/logs/action/:actionId/stats - Get statistics for an action',
+        create: 'POST /api/logs/action/:actionId - Log activity (body: {log_type, content, log_date, metric_value?, metric_unit?, mood?})',
+        update: 'PUT /api/logs/:id - Update log entry',
+        delete: 'DELETE /api/logs/:id - Delete log entry',
+        log_types: ['note', 'progress', 'completion', 'media', 'link'],
+        moods: ['motivated', 'challenged', 'accomplished', 'frustrated', 'neutral']
+      }
+    },
+    recommended_flow: [
+      '1. Start with GET /api/user/summary to see all goals and recent activity',
+      '2. Use GET /api/goals/:id to dive into a specific goal structure',
+      '3. Use GET /api/logs/action/:actionId to see detailed activity for specific actions',
+      '4. Create logs via POST /api/logs/action/:actionId to track new activity'
+    ],
+    notes: [
+      'All responses follow format: {success: boolean, data?: any, error?: string}',
+      'No authentication required currently',
+      'Activity logs are the primary way to track progress - there are no completion checkboxes',
+      'The Harada Method emphasizes continuous improvement through regular logging'
+    ]
+  });
+});
+
+// Protected routes - require authentication
+app.use('/api/goals', requireAuth, goalsRouter);
+app.use('/api/subgoals', requireAuth, subgoalsRouter);
+app.use('/api/actions', requireAuth, actionsRouter);
+app.use('/api/user', requireAuth, userRouter);
+app.use('/api/logs', requireAuth, logsRouter);
+app.use('/api/guestbook', requireAuth, guestbookRouter);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+});

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ./backend/src:/app/src
+    environment:
+      - DATABASE_URL=file:/app/data/harada.db
+      - NODE_ENV=development
+      - PORT=3001
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - api
+    restart: unless-stopped
