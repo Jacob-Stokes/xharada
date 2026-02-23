@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { api, API_URL } from '../api/client';
 
 interface Goal {
   id: string;
@@ -16,6 +16,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadGoals();
@@ -60,7 +61,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:3001/api/auth/logout', {
+      await fetch(`${API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -81,6 +82,7 @@ export default function Home() {
           <div className="flex gap-3">
             <Link
               to="/settings"
+              state={{ from: location.pathname }}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded hover:bg-gray-100"
             >
               Settings

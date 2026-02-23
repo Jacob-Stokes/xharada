@@ -4,23 +4,23 @@ import Home from './pages/Home';
 import GoalGrid from './pages/GoalGrid';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
+import { api } from './api/client';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if user is authenticated
-    fetch('http://localhost:3001/api/auth/me', {
-      credentials: 'include',
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setIsAuthenticated(data.success);
-      })
-      .catch(() => {
+    const checkAuth = async () => {
+      try {
+        await api.getMe();
+        setIsAuthenticated(true);
+      } catch {
         setIsAuthenticated(false);
-      });
+      }
+    };
+
+    checkAuth();
   }, []);
 
   if (isAuthenticated === null) {

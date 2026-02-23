@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -26,6 +26,9 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T
 }
 
 export const api = {
+  // Auth
+  getMe: () => apiRequest<any>('/api/auth/me'),
+
   // Goals
   getGoals: () => apiRequest<any[]>('/api/goals'),
   getGoal: (id: string) => apiRequest<any>(`/api/goals/${id}`),

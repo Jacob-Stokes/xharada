@@ -1,0 +1,129 @@
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
+export type ViewMode = 'compact' | 'full';
+export type CenterLayout = 'single' | 'radial';
+export type CenterBackdrop = 'page' | 'card';
+export type PaletteName = 'classic' | 'rainbow' | 'pastel' | 'mono';
+
+export interface DisplaySettings {
+  defaultView: ViewMode;
+  palette: PaletteName;
+  customSubGoalColors: Record<number, string>;
+  inheritActionColors: boolean;
+  actionShadePercent: number;
+  centerLayout: CenterLayout;
+  centerBackdrop: CenterBackdrop;
+}
+
+export const paletteOptions: Record<PaletteName, { label: string; colors: string[] }> = {
+  classic: {
+    label: 'Classic Greens',
+    colors: ['#22c55e', '#86efac', '#15803d', '#bbf7d0', '#4ade80', '#166534', '#86efac', '#22c55e'],
+  },
+  rainbow: {
+    label: 'Rainbow',
+    colors: ['#f97316', '#facc15', '#22c55e', '#14b8a6', '#0ea5e9', '#6366f1', '#ec4899', '#ef4444'],
+  },
+  pastel: {
+    label: 'Pastel',
+    colors: ['#fecdd3', '#fde68a', '#d9f99d', '#bae6fd', '#ddd6fe', '#fde68a', '#fecdd3', '#c4b5fd'],
+  },
+  mono: {
+    label: 'Greyscale',
+    colors: ['#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db', '#4b5563', '#1f2937'],
+  },
+};
+
+const STORAGE_KEY = 'haradaDisplaySettings';
+
+const defaultSettings: DisplaySettings = {
+  defaultView: 'compact',
+  palette: 'classic',
+  customSubGoalColors: {},
+  inheritActionColors: true,
+  actionShadePercent: 60,
+  centerLayout: 'single',
+  centerBackdrop: 'card',
+};
+
+interface DisplaySettingsContextValue {
+  settings: DisplaySettings;
+  updateSettings: (changes: Partial<DisplaySettings>) => void;
+  setSubGoalColor: (position: number, color: string | null) => void;
+  resetSubGoalColors: () => void;
+  computedColors: Record<number, string>;
+}
+
+const DisplaySettingsContext = createContext<DisplaySettingsContextValue | null>(null);
+
+const readStoredSettings = (): DisplaySettings => {
+  if (typeof window === 'undefined') return defaultSettings;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return { ...defaultSettings, ...JSON.parse(stored) };
+    }
+  } catch (error) {
+    console.warn('Failed to parse display settings', error);
+  }
+  return defaultSettings;
+};
+
+export function DisplaySettingsProvider({ children }: { children: React.ReactNode }) {
+  const [settings, setSettings] = useState<DisplaySettings>(readStoredSettings);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  }, [settings]);
+
+  const updateSettings = (changes: Partial<DisplaySettings>) => {
+    setSettings((prev) => ({ ...prev, ...changes }));
+  };
+
+  const setSubGoalColor = (position: number, color: string | null) => {
+    setSettings((prev) => {
+      const nextColors = { ...prev.customSubGoalColors };
+      if (!color) {
+        delete nextColors[position];
+      } else {
+        nextColors[position] = color;
+      }
+      return { ...prev, customSubGoalColors: nextColors };
+    });
+  };
+
+  const resetSubGoalColors = () => {
+    setSettings((prev) => ({ ...prev, customSubGoalColors: {} }));
+  };
+
+  const computedColors = useMemo(() => {
+    const palette = paletteOptions[settings.palette]?.colors || paletteOptions.classic.colors;
+    const mapping: Record<number, string> = {};
+    for (let i = 1; i <= 8; i += 1) {
+      mapping[i] = settings.customSubGoalColors[i] || palette[i - 1] || palette[0];
+    }
+    return mapping;
+  }, [settings.palette, settings.customSubGoalColors]);
+
+  const value: DisplaySettingsContextValue = {
+    settings,
+    updateSettings,
+    setSubGoalColor,
+    resetSubGoalColors,
+    computedColors,
+  };
+
+  return (
+    <DisplaySettingsContext.Provider value={value}>
+      {children}
+    </DisplaySettingsContext.Provider>
+  );
+}
+
+export function useDisplaySettings() {
+  const context = useContext(DisplaySettingsContext);
+  if (!context) {
+    throw new Error('useDisplaySettings must be used within DisplaySettingsProvider');
+  }
+  return context;
+}

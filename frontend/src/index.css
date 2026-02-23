@@ -15,3 +15,45 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+@page {
+  margin: 0.5in;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .printable-grid,
+  .printable-grid * {
+    visibility: visible !important;
+  }
+
+  .printable-grid {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .printable-grid.screen-hidden {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+  }
+}
+
+.printable-grid.screen-hidden {
+  display: none;
+}

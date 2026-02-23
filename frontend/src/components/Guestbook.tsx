@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { API_URL } from '../api/client';
 import ReactMarkdown from 'react-markdown';
 
 interface GuestbookEntry {
@@ -32,7 +32,7 @@ export default function Guestbook({ targetType, targetId }: GuestbookProps) {
       if (targetType) params.append('target_type', targetType);
       if (targetId) params.append('target_id', targetId);
 
-      const response = await fetch(`http://localhost:3001/api/guestbook?${params.toString()}`, {
+      const response = await fetch(`${API_URL}/api/guestbook?${params.toString()}`, {
         credentials: 'include',
         headers: {
           'x-api-key': localStorage.getItem('apiKey') || ''

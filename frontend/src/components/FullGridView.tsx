@@ -1,4 +1,5 @@
 import React from 'react';
+import { darkenColor, getReadableTextColor, lightenColor } from '../utils/color';
 
 interface ActionItem {
   id: string;
@@ -24,6 +25,13 @@ interface FullGridViewProps {
   onUpdateAction?: (id: string, title: string) => void;
   gridAspect: 'square' | 'rectangle';
   onCenterClick?: () => void;
+  subGoalColors: Record<number, string>;
+  actionColorSettings: {
+    inherit: boolean;
+    shadePercent: number;
+  };
+  centerLayout: 'single' | 'radial';
+  centerBackdrop: 'page' | 'card';
 }
 
 export default function FullGridView({
@@ -36,11 +44,96 @@ export default function FullGridView({
   onUpdateSubGoal,
   onUpdateAction,
   gridAspect,
-  onCenterClick
+  onCenterClick,
+  subGoalColors,
+  actionColorSettings,
+  centerLayout,
+  centerBackdrop
 }: FullGridViewProps) {
 
   const getSubGoalAtPosition = (position: number): SubGoal | undefined => {
     return subGoals.find(sg => sg.position === position);
+  };
+
+  const getColorForPosition = (position: number) => {
+    return subGoalColors[position] || '#22c55e';
+  };
+
+  const centerBackgroundClass =
+    centerBackdrop === 'page' ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200';
+
+  const renderCenterCell = () => {
+    if (centerLayout === 'radial') {
+      const bridgeConfig = [
+        { area: '1 / 2 / 2 / 3', position: 2, arrow: '↓' },
+        { area: '2 / 3 / 3 / 4', position: 4, arrow: '←' },
+        { area: '3 / 2 / 4 / 3', position: 6, arrow: '↑' },
+        { area: '2 / 1 / 3 / 2', position: 8, arrow: '→' },
+        { area: '1 / 1 / 2 / 2', position: 1, arrow: '↘' },
+        { area: '1 / 3 / 2 / 4', position: 3, arrow: '↙' },
+        { area: '3 / 3 / 4 / 4', position: 5, arrow: '↖' },
+        { area: '3 / 1 / 4 / 2', position: 7, arrow: '↗' },
+      ];
+
+      return (
+        <div
+          key="center-radial"
+          className={`col-span-3 row-span-3 rounded-lg p-2 sm:p-3 border ${centerBackgroundClass}`}
+          style={{ aspectRatio: gridAspect === 'square' ? '1' : 'auto' }}
+        >
+          <div className="grid grid-cols-3 grid-rows-3 gap-1 h-full">
+            {bridgeConfig.map((bridge) => {
+              const subGoal = getSubGoalAtPosition(bridge.position);
+              const color = getColorForPosition(bridge.position);
+              const bg = lightenColor(color, 65);
+              return (
+                <div
+                  key={`bridge-${bridge.position}`}
+                  style={{ gridArea: bridge.area }}
+                  className="rounded-md border text-[10px] sm:text-xs flex flex-col items-center justify-center text-center px-1 py-1"
+                >
+                  <div
+                    className="w-full rounded px-1 py-0.5 font-medium"
+                    style={{
+                      backgroundColor: bg,
+                      color: getReadableTextColor(bg),
+                    }}
+                  >
+                    {subGoal ? subGoal.title : `Sub-goal ${bridge.position}`}
+                  </div>
+                  <div className="mt-1 text-gray-500" aria-hidden="true">
+                    {bridge.arrow}
+                  </div>
+                </div>
+              );
+            })}
+            <div
+              className="col-start-2 row-start-2 flex items-center justify-center text-center font-bold text-sm sm:text-lg px-2 rounded-md cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              onClick={onCenterClick}
+              title="Click to edit description"
+            >
+              {goalTitle}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key="center-single"
+        className={`col-span-3 row-span-3 rounded-lg p-1 sm:p-2 border ${centerBackgroundClass}`}
+        style={{ aspectRatio: gridAspect === 'square' ? '1' : 'auto' }}
+      >
+        <div
+          onClick={onCenterClick}
+          className="w-full h-full bg-blue-600 text-white flex items-center justify-center font-bold text-base sm:text-lg cursor-pointer hover:bg-blue-700 transition-colors text-center px-4 rounded-md"
+          title="Click to edit description"
+        >
+          {goalTitle}
+        </div>
+      </div>
+    );
   };
 
   const renderCell = (row: number, col: number) => {
@@ -80,9 +173,16 @@ export default function FullGridView({
         );
       }
 
+      const color = getColorForPosition(subGoalPos);
+      const textColor = getReadableTextColor(color);
       return (
         <div
-          className="bg-green-100 border-2 border-green-500 p-1 h-full flex items-center justify-center cursor-pointer hover:bg-green-200"
+          className="p-1 h-full flex items-center justify-center cursor-pointer rounded"
+          style={{
+            backgroundColor: color,
+            border: `2px solid ${darkenColor(color, 12)}`,
+            color: textColor,
+          }}
           onClick={() => onSubGoalClick(subGoal)}
           onContextMenu={(e) => {
             e.preventDefault();
@@ -161,6 +261,14 @@ export default function FullGridView({
       }
 
       const action = subGoal.actions.find(a => a.position === actionInfo.actionPos);
+      const parentColor = getColorForPosition(actionInfo.subGoalPos);
+      const shadeAmount = Math.min(Math.max(actionColorSettings.shadePercent, 0), 100);
+      const actionBg = actionColorSettings.inherit
+        ? lightenColor(parentColor, shadeAmount)
+        : '#ffffff';
+      const actionTextColor = actionColorSettings.inherit
+        ? getReadableTextColor(actionBg)
+        : '#111827';
 
       if (!action) {
         return (
@@ -185,7 +293,12 @@ export default function FullGridView({
               }
             }
           }}
-          className="bg-white border border-gray-300 hover:bg-gray-50 p-1 cursor-pointer text-xs h-full flex items-center justify-center"
+          className="border rounded hover:opacity-90 p-1 cursor-pointer text-xs h-full flex items-center justify-center"
+          style={{
+            backgroundColor: actionBg,
+            borderColor: actionColorSettings.inherit ? parentColor : '#d1d5db',
+            color: actionTextColor,
+          }}
           title={action.title + ' (Right-click to edit)'}
         >
           <div className="text-center break-words">{action.title}</div>
@@ -198,42 +311,32 @@ export default function FullGridView({
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-4">
-      <div
-        className={`grid grid-cols-9 gap-1 ${gridAspect === 'square' ? 'max-w-5xl' : ''} mx-auto`}
-        style={{ gridAutoRows: '1fr' }}
-      >
+      <div className="overflow-x-auto">
+        <div
+          className={`grid grid-cols-9 gap-1 min-w-[540px] sm:min-w-0 ${gridAspect === 'square' ? 'max-w-5xl' : ''} mx-auto`}
+          style={{ gridAutoRows: '1fr' }}
+        >
         {Array.from({ length: 9 }, (_, row) =>
           Array.from({ length: 9 }, (_, col) => {
             // Skip rendering cells that are part of the center 3x3 (except the main one)
             if (row >= 3 && row <= 5 && col >= 3 && col <= 5) {
               if (row === 3 && col === 3) {
-                // Render the merged center cell
-                return (
-                  <div
-                    key={`${row}-${col}`}
-                    onClick={onCenterClick}
-                    className="col-span-3 row-span-3 bg-blue-600 text-white flex items-center justify-center font-bold text-lg cursor-pointer hover:bg-blue-700 transition-colors"
-                    style={{ aspectRatio: gridAspect === 'square' ? '1' : 'auto' }}
-                    title="Click to edit description"
-                  >
-                    {goalTitle}
-                  </div>
-                );
+                return renderCenterCell();
               }
-              // Skip other cells in the 3x3 block
               return null;
             }
 
             return (
-              <div key={`${row}-${col}`} className={gridAspect === 'square' ? 'aspect-square' : 'aspect-[5/3]'}>
+              <div key={`${row}-${col}`} className={`${gridAspect === 'square' ? 'aspect-square' : 'aspect-[5/3]'} `}>
                 {renderCell(row, col)}
               </div>
             );
           })
         )}
+        </div>
       </div>
 
-      <div className="mt-6 text-center text-sm text-gray-500">
+      <div className="mt-6 text-center text-sm text-gray-500 print-hidden">
         <p>Full 9x9 Harada grid - Sub-goals (green) surrounded by 8 action items each. Click actions to log activity.</p>
       </div>
     </div>

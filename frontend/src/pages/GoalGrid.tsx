@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
 import FullGridView from '../components/FullGridView';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Guestbook from '../components/Guestbook';
+import { useDisplaySettings } from '../context/DisplaySettingsContext';
+import { getReadableTextColor, lightenColor } from '../utils/color';
 
 interface ActivityLog {
   id: string;
@@ -43,13 +45,15 @@ interface Goal {
 
 export default function GoalGrid() {
   const { goalId } = useParams<{ goalId: string }>();
+  const location = useLocation();
   const [goal, setGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<ActionItem | null>(null);
   const [showLogModal, setShowLogModal] = useState(false);
   const [actionLogs, setActionLogs] = useState<ActivityLog[]>([]);
-  const [viewMode, setViewMode] = useState<'compact' | 'full'>('compact');
+  const { settings: displaySettings, computedColors } = useDisplaySettings();
+  const [viewMode, setViewMode] = useState<'compact' | 'full'>(displaySettings.defaultView);
   const [gridAspect, setGridAspect] = useState<'square' | 'rectangle'>('square');
   const [selectedSubGoal, setSelectedSubGoal] = useState<SubGoal | null>(null);
   const [showSubGoalModal, setShowSubGoalModal] = useState(false);
@@ -71,6 +75,11 @@ export default function GoalGrid() {
       loadGoal();
     }
   }, [goalId]);
+
+  useEffect(() => {
+    setViewMode(displaySettings.defaultView);
+  }, [displaySettings.defaultView]);
+
 
   const loadGoal = async () => {
     try {
@@ -164,6 +173,12 @@ export default function GoalGrid() {
     setShowDescriptionModal(true);
   };
 
+  const handlePrintGrid = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
+  };
+
   const handleSaveDescription = async () => {
     if (!goal) return;
 
@@ -237,20 +252,36 @@ export default function GoalGrid() {
     }
 
     const actionsWithActivity = subGoal.actions.length;
+    const baseColor = computedColors[position] || '#22c55e';
+    const cardBackground = lightenColor(baseColor, 70);
+    const textColor = getReadableTextColor(cardBackground);
 
     return (
       <div
-        className="bg-green-50 border-2 border-green-500 p-4 rounded-lg hover:bg-green-100 transition-colors h-full min-h-[120px] flex flex-col"
+        className="p-4 rounded-lg transition-colors h-full min-h-[120px] flex flex-col"
+        style={{
+          backgroundColor: cardBackground,
+          border: `2px solid ${baseColor}`,
+          color: textColor,
+        }}
       >
         <div className="flex items-start justify-between mb-2">
           <div className="font-semibold text-sm flex-1">{subGoal.title}</div>
-          <div className="text-xs bg-green-200 px-2 py-1 rounded">{position}</div>
+          <div
+            className="text-xs px-2 py-1 rounded"
+            style={{
+              backgroundColor: lightenColor(baseColor, 30),
+              color: getReadableTextColor(lightenColor(baseColor, 30)),
+            }}
+          >
+            {position}
+          </div>
         </div>
         <div className="mt-auto">
-          <div className="text-xs text-gray-600 mb-1">
+          <div className="text-xs opacity-80 mb-1">
             {actionsWithActivity}/8 actions defined
           </div>
-          <div className="text-xs text-blue-600 font-medium">
+          <div className="text-xs font-medium">
             Click actions to log activity →
           </div>
         </div>
@@ -280,10 +311,22 @@ export default function GoalGrid() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       {/* Header - always constrained */}
-      <div className="container mx-auto px-4 max-w-6xl mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <Link to="/" className="text-blue-600 hover:underline mb-2 inline-block">← Back to Goals</Link>
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl mb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 text-sm">
+              <Link to="/" className="text-blue-600 hover:underline inline-flex items-center gap-1">
+                ← Back to Goals
+              </Link>
+              <span className="text-gray-400">•</span>
+              <Link
+                to="/settings"
+                state={{ from: location.pathname }}
+                className="text-blue-600 hover:underline inline-flex items-center gap-1"
+              >
+                ⚙ Settings
+              </Link>
+            </div>
             <h1
               className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600"
               onContextMenu={(e) => {
@@ -300,12 +343,12 @@ export default function GoalGrid() {
             {goal.description && <p className="text-gray-600 mt-1">{goal.description}</p>}
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {/* View Mode Toggle */}
-            <div className="flex gap-2 bg-white rounded-lg shadow p-1">
+            <div className="flex flex-wrap gap-2 bg-white rounded-lg shadow p-1">
               <button
                 onClick={() => setViewMode('compact')}
-                className={`px-4 py-2 rounded transition-colors text-sm ${
+                className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                   viewMode === 'compact'
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
@@ -315,7 +358,7 @@ export default function GoalGrid() {
               </button>
               <button
                 onClick={() => setViewMode('full')}
-                className={`px-4 py-2 rounded transition-colors text-sm ${
+                className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                   viewMode === 'full'
                     ? 'bg-blue-600 text-white'
                     : 'text-gray-600 hover:bg-gray-100'
@@ -327,10 +370,10 @@ export default function GoalGrid() {
 
             {/* Aspect Ratio Toggle (only show in full mode) */}
             {viewMode === 'full' && (
-              <div className="flex gap-2 bg-white rounded-lg shadow p-1">
+              <div className="flex flex-wrap gap-2 bg-white rounded-lg shadow p-1">
                 <button
                   onClick={() => setGridAspect('square')}
-                  className={`px-4 py-2 rounded transition-colors text-sm ${
+                  className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                     gridAspect === 'square'
                       ? 'bg-green-600 text-white'
                       : 'text-gray-600 hover:bg-gray-100'
@@ -340,7 +383,7 @@ export default function GoalGrid() {
                 </button>
                 <button
                   onClick={() => setGridAspect('rectangle')}
-                  className={`px-4 py-2 rounded transition-colors text-sm ${
+                  className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                     gridAspect === 'rectangle'
                       ? 'bg-green-600 text-white'
                       : 'text-gray-600 hover:bg-gray-100'
@@ -350,6 +393,14 @@ export default function GoalGrid() {
                 </button>
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={handlePrintGrid}
+              className="print-hidden px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 transition-colors bg-white shadow"
+            >
+              Print Grid
+            </button>
           </div>
         </div>
 
@@ -361,22 +412,31 @@ export default function GoalGrid() {
       </div>
 
       {/* Content - responsive width based on view mode */}
-      <div className={`container mx-auto ${viewMode === 'full' && gridAspect === 'rectangle' ? 'px-24 max-w-[85%]' : 'px-4 max-w-6xl'}`}>
+      <div className={`container mx-auto px-4 md:px-6 ${viewMode === 'full' && gridAspect === 'rectangle' ? 'max-w-6xl lg:max-w-[85%]' : 'max-w-6xl'}`}>
 
         {viewMode === 'full' ? (
           <>
-            <FullGridView
-              goalTitle={goal.title}
-              subGoals={goal.subGoals}
-              onActionClick={handleActionClick}
-              onSubGoalClick={handleSubGoalClick}
-              onAddSubGoal={handleAddSubGoal}
-              onAddAction={handleAddAction}
-              onUpdateSubGoal={handleUpdateSubGoal}
-              onUpdateAction={handleUpdateAction}
-              gridAspect={gridAspect}
-              onCenterClick={handleOpenDescriptionModal}
-            />
+            <div className="printable-grid">
+              <FullGridView
+                goalTitle={goal.title}
+                subGoals={goal.subGoals}
+                onActionClick={handleActionClick}
+                onSubGoalClick={handleSubGoalClick}
+                onAddSubGoal={handleAddSubGoal}
+                onAddAction={handleAddAction}
+                onUpdateSubGoal={handleUpdateSubGoal}
+                onUpdateAction={handleUpdateAction}
+                gridAspect={gridAspect}
+                onCenterClick={handleOpenDescriptionModal}
+                subGoalColors={computedColors}
+                actionColorSettings={{
+                  inherit: displaySettings.inheritActionColors,
+                  shadePercent: displaySettings.actionShadePercent,
+                }}
+                centerLayout={displaySettings.centerLayout}
+                centerBackdrop={displaySettings.centerBackdrop}
+              />
+            </div>
 
             {/* Guestbook for this goal in full view */}
             <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
@@ -385,8 +445,8 @@ export default function GoalGrid() {
           </>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Top row - positions 1, 2, 3 */}
                 {renderSubGoalCard(1)}
                 {renderSubGoalCard(2)}
@@ -440,6 +500,29 @@ export default function GoalGrid() {
                   ) : []
                 )}
               </div>
+            </div>
+
+            {/* Hidden full grid just for printing when in compact mode */}
+            <div className="printable-grid screen-hidden">
+              <FullGridView
+                goalTitle={goal.title}
+                subGoals={goal.subGoals}
+                onActionClick={handleActionClick}
+                onSubGoalClick={handleSubGoalClick}
+                onAddSubGoal={handleAddSubGoal}
+                onAddAction={handleAddAction}
+                onUpdateSubGoal={handleUpdateSubGoal}
+                onUpdateAction={handleUpdateAction}
+                gridAspect={gridAspect}
+                onCenterClick={handleOpenDescriptionModal}
+                subGoalColors={computedColors}
+                actionColorSettings={{
+                  inherit: displaySettings.inheritActionColors,
+                  shadePercent: displaySettings.actionShadePercent,
+                }}
+                centerLayout={displaySettings.centerLayout}
+                centerBackdrop={displaySettings.centerBackdrop}
+              />
             </div>
 
             {/* Guestbook for this goal */}
