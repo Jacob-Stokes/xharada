@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { api } from '../api/client';
 import FullGridView from '../components/FullGridView';
@@ -46,6 +46,13 @@ interface Goal {
   subGoals: SubGoal[];
 }
 
+type TextModalState =
+  | { mode: 'add-subgoal'; position: number }
+  | { mode: 'add-action'; subGoalId: string; position: number }
+  | { mode: 'rename-subgoal'; subGoal: SubGoal }
+  | { mode: 'rename-action'; action: ActionItem }
+  | { mode: 'rename-goal'; goalId: string };
+
 export default function GoalGrid() {
   const { goalId } = useParams<{ goalId: string }>();
   const location = useLocation();
@@ -64,6 +71,12 @@ export default function GoalGrid() {
   const [descriptionForm, setDescriptionForm] = useState('');
   const [draggingSubGoal, setDraggingSubGoal] = useState<SubGoal | null>(null);
   const [draggingAction, setDraggingAction] = useState<{ subGoalId: string; action: ActionItem } | null>(null);
+  const [textModal, setTextModal] = useState<TextModalState | null>(null);
+  const [textModalValue, setTextModalValue] = useState('');
+  const [textModalError, setTextModalError] = useState<string | null>(null);
+  const [textModalSubmitting, setTextModalSubmitting] = useState(false);
+  const subGoalCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const actionSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Log form state
   const [logForm, setLogForm] = useState({
@@ -94,21 +107,6 @@ export default function GoalGrid() {
     due_date: overrides?.due_date ?? action.due_date ?? null,
   });
 
-  const findSubGoalById = (subGoalId: string) => {
-    return goal?.subGoals.find((sg) => sg.id === subGoalId) || null;
-  };
-
-  const findActionById = (actionId: string) => {
-    if (!goal) return null;
-    for (const subGoal of goal.subGoals) {
-      const action = subGoal.actions.find((a) => a.id === actionId);
-      if (action) {
-        return { subGoal, action };
-      }
-    }
-    return null;
-  };
-
   useEffect(() => {
     if (goalId) {
       loadGoal();
@@ -137,58 +135,54 @@ export default function GoalGrid() {
     return goal?.subGoals.find(sg => sg.position === position);
   };
 
-  const handleAddSubGoal = async (position: number) => {
-    const title = prompt(`Enter sub-goal ${position} title:`);
-    if (!title?.trim()) return;
+  const openTextModal = (modalState: TextModalState, initialValue = '') => {
+    setTextModal(modalState);
+    setTextModalValue(initialValue);
+    setTextModalError(null);
+  };
 
-    try {
-      await api.createSubGoal(goalId!, { position, title: title.trim() });
-      loadGoal();
-    } catch (err) {
-      setError((err as Error).message);
+  const scrollToActionSection = (subGoal: SubGoal) => {
+    const el = actionSectionRefs.current[subGoal.id];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add('ring', 'ring-blue-300');
+      setTimeout(() => el.classList.remove('ring', 'ring-blue-300'), 1200);
     }
   };
 
-  const handleAddAction = async (subGoalId: string, position: number) => {
-    const title = prompt(`Enter action ${position} title:`);
-    if (!title?.trim()) return;
-
-    try {
-      await api.createAction(subGoalId, { position, title: title.trim() });
-      loadGoal();
-    } catch (err) {
-      setError((err as Error).message);
+  const scrollToSubGoalCard = (position: number) => {
+    const el = subGoalCardRefs.current[position];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.classList.add('ring', 'ring-blue-300');
+      setTimeout(() => el.classList.remove('ring', 'ring-blue-300'), 1200);
     }
   };
 
-  const handleUpdateSubGoal = async (id: string, title: string) => {
-    const subGoal = findSubGoalById(id);
-    if (!subGoal) return;
-
-    try {
-      await api.updateSubGoal(id, buildSubGoalPayload(subGoal, { title }));
-      loadGoal();
-    } catch (err) {
-      setError((err as Error).message);
-    }
+  const handleAddSubGoal = (position: number) => {
+    openTextModal({ mode: 'add-subgoal', position }, '');
   };
 
-  const handleUpdateAction = async (id: string, title: string) => {
-    const result = findActionById(id);
-    if (!result) return;
-    const { action } = result;
+  const handleAddAction = (subGoalId: string, position: number) => {
+    openTextModal({ mode: 'add-action', subGoalId, position }, '');
+  };
 
-    try {
-      await api.updateAction(id, buildActionPayload(action, { title }));
-      loadGoal();
-    } catch (err) {
-      setError((err as Error).message);
-    }
+  const handleUpdateSubGoal = (subGoal: SubGoal) => {
+    openTextModal({ mode: 'rename-subgoal', subGoal }, subGoal.title);
+  };
+
+  const handleUpdateAction = (action: ActionItem) => {
+    openTextModal({ mode: 'rename-action', action }, action.title);
   };
 
   const handleSubGoalClick = (subGoal: SubGoal) => {
     setSelectedSubGoal(subGoal);
     setShowSubGoalModal(true);
+  };
+
+  const startRenameGoal = () => {
+    if (!goal) return;
+    openTextModal({ mode: 'rename-goal', goalId: goal.id }, goal.title);
   };
 
   const handleActionClick = async (action: ActionItem) => {
@@ -332,12 +326,90 @@ export default function GoalGrid() {
     }
   };
 
+  const getTextModalHeading = () => {
+    if (!textModal) return '';
+    switch (textModal.mode) {
+      case 'add-subgoal':
+        return `Add Sub-goal ${textModal.position}`;
+      case 'add-action':
+        return `Add Action ${textModal.position}`;
+      case 'rename-subgoal':
+        return 'Rename Sub-goal';
+      case 'rename-action':
+        return 'Rename Action';
+      case 'rename-goal':
+        return 'Rename Goal';
+      default:
+        return '';
+    }
+  };
+
+  const handleTextModalSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!textModal) return;
+    const value = textModalValue.trim();
+    if (!value) {
+      setTextModalError('Please enter a name.');
+      return;
+    }
+    try {
+      setTextModalSubmitting(true);
+      switch (textModal.mode) {
+        case 'add-subgoal': {
+          if (!goalId) throw new Error('Goal not found.');
+          await api.createSubGoal(goalId, { position: textModal.position, title: value });
+          await loadGoal();
+          break;
+        }
+        case 'add-action': {
+          await api.createAction(textModal.subGoalId, { position: textModal.position, title: value });
+          await loadGoal();
+          break;
+        }
+        case 'rename-subgoal': {
+          await api.updateSubGoal(
+            textModal.subGoal.id,
+            buildSubGoalPayload(textModal.subGoal, { title: value })
+          );
+          await loadGoal();
+          break;
+        }
+        case 'rename-action': {
+          await api.updateAction(
+            textModal.action.id,
+            buildActionPayload(textModal.action, { title: value })
+          );
+          await loadGoal();
+          break;
+        }
+        case 'rename-goal': {
+          await handleUpdateGoalTitle(value);
+          break;
+        }
+        default:
+          break;
+      }
+      setTextModal(null);
+      setTextModalValue('');
+      setTextModalError(null);
+    } catch (err) {
+      setTextModalError((err as Error).message);
+    } finally {
+      setTextModalSubmitting(false);
+    }
+  };
+
   const renderSubGoalCard = (position: number) => {
     const subGoal = getSubGoalAtPosition(position);
+
+    const setCardRef = (el: HTMLDivElement | null) => {
+      subGoalCardRefs.current[position] = el;
+    };
 
     if (!subGoal) {
       return (
         <div
+          ref={setCardRef}
           onClick={() => handleAddSubGoal(position)}
           className="bg-yellow-50 border-2 border-dashed border-yellow-400 p-4 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors flex flex-col items-center justify-center h-full min-h-[120px]"
         >
@@ -352,14 +424,16 @@ export default function GoalGrid() {
     const cardBackground = lightenColor(baseColor, 70);
     const textColor = getReadableTextColor(cardBackground);
 
-    return (
-      <div
-        className="p-4 rounded-lg transition-colors h-full min-h-[120px] flex flex-col"
-        style={{
-          backgroundColor: cardBackground,
-          border: `2px solid ${baseColor}`,
-          color: textColor,
-        }}
+      return (
+        <div
+          ref={setCardRef}
+          className="p-4 rounded-lg transition-colors h-full min-h-[120px] flex flex-col"
+          onClick={() => scrollToActionSection(subGoal)}
+          style={{
+            backgroundColor: cardBackground,
+            border: `2px solid ${baseColor}`,
+            color: textColor,
+          }}
       >
         <div className="flex items-start justify-between mb-2">
           <div className="font-semibold text-sm flex-1">{subGoal.title}</div>
@@ -427,10 +501,7 @@ export default function GoalGrid() {
               className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600"
               onContextMenu={(e) => {
                 e.preventDefault();
-                const newTitle = prompt('Edit goal title:', goal.title);
-                if (newTitle && newTitle.trim()) {
-                  handleUpdateGoalTitle(newTitle.trim());
-                }
+                startRenameGoal();
               }}
               title="Right-click to rename"
             >
@@ -580,27 +651,44 @@ export default function GoalGrid() {
             <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
               <h3 className="text-lg font-semibold mb-4">All Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {goal.subGoals.flatMap(sg =>
-                  sg.actions.length > 0 ? (
-                    <div key={sg.id} className="border rounded-lg p-3 bg-gray-50">
-                      <div className="text-xs font-semibold text-gray-600 mb-2">{sg.title}</div>
+                {goal.subGoals.map((sg) => (
+                  <div
+                    key={sg.id}
+                    ref={(el) => {
+                      actionSectionRefs.current[sg.id] = el;
+                    }}
+                    className="border rounded-lg p-3 bg-gray-50 scroll-mt-24"
+                  >
+                    <div className="flex items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-2">
+                      <span>{sg.title}</span>
+                      <button
+                        type="button"
+                        onClick={() => scrollToSubGoalCard(sg.position)}
+                        className="text-blue-600 hover:text-blue-800 text-[11px]"
+                      >
+                        ↑ Back to grid
+                      </button>
+                    </div>
+                    {sg.actions.length === 0 ? (
+                      <div className="text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded p-3">
+                        No actions yet. Tap the card above or use Full grid view to add actions.
+                      </div>
+                    ) : (
                       <div className="space-y-2">
-                        {sg.actions.map(action => (
+                        {sg.actions.map((action) => (
                           <div
                             key={action.id}
                             onClick={() => handleActionClick(action)}
                             className="bg-white border border-gray-300 rounded p-2 cursor-pointer hover:shadow-md transition-shadow"
                           >
                             <div className="text-sm font-medium">{action.title}</div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              Click to log activity
-                            </div>
+                            <div className="text-xs text-gray-500 mt-1">Click to log activity</div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ) : []
-                )}
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -634,6 +722,60 @@ export default function GoalGrid() {
           </>
         )}
       </div>
+
+      {/* Text Input Modal */}
+      {textModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <form
+            onSubmit={handleTextModalSubmit}
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
+          >
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">{getTextModalHeading()}</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {textModal.mode === 'add-subgoal' &&
+                  'Give this new sub-goal a name so it stands out on the grid.'}
+                {textModal.mode === 'add-action' &&
+                  'Describe the action you want to track underneath this sub-goal.'}
+                {textModal.mode === 'rename-subgoal' && 'Update the sub-goal title.'}
+                {textModal.mode === 'rename-action' && 'Update the action title.'}
+                {textModal.mode === 'rename-goal' && 'Update the primary goal title.'}
+              </p>
+            </div>
+            <input
+              type="text"
+              value={textModalValue}
+              onChange={(e) => setTextModalValue(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            {textModalError && (
+              <div className="text-sm text-red-600">{textModalError}</div>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTextModal(null);
+                  setTextModalError(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={textModalSubmitting}
+                className={`px-4 py-2 rounded text-sm text-white ${
+                  textModalSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {textModalSubmitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Activity Log Modal */}
       {showLogModal && selectedAction && (
@@ -918,12 +1060,7 @@ export default function GoalGrid() {
                           </div>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => {
-                                const newTitle = prompt('Rename action:', action.title);
-                                if (newTitle && newTitle.trim()) {
-                                  handleUpdateAction(action.id, newTitle.trim());
-                                }
-                              }}
+                              onClick={() => handleUpdateAction(action)}
                               className="text-blue-600 hover:text-blue-800 text-sm px-2 py-1"
                             >
                               Rename

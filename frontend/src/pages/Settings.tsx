@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Guestbook from '../components/Guestbook';
 import { API_URL } from '../api/client';
@@ -13,6 +13,13 @@ interface ApiKey {
   expires_at: string | null;
 }
 
+interface GoalSummary {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+}
+
 export default function Settings() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +28,14 @@ export default function Settings() {
   const [newKeyName, setNewKeyName] = useState('');
   const [newKeyExpireDays, setNewKeyExpireDays] = useState('365');
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'keys' | 'docs' | 'guestbook' | 'display'>('keys');
+  const [activeTab, setActiveTab] = useState<'keys' | 'docs' | 'guestbook' | 'display' | 'data'>('keys');
+  const [goalSummaries, setGoalSummaries] = useState<GoalSummary[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(false);
+  const [exportMode, setExportMode] = useState<'all' | 'selected'>('all');
+  const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([]);
+  const [exportingGoals, setExportingGoals] = useState(false);
+  const [importingGoals, setImportingGoals] = useState(false);
+  const [dataNotice, setDataNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const {
     settings: displaySettings,
     updateSettings: updateDisplaySettings,
@@ -49,6 +63,12 @@ export default function Settings() {
     loadKeys();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'data' && goalSummaries.length === 0 && !goalsLoading) {
+      fetchGoalSummaries();
+    }
+  }, [activeTab]);
+
   const loadKeys = async () => {
     try {
       setLoading(true);
@@ -68,7 +88,26 @@ export default function Settings() {
     }
   };
 
-  const handleCreateKey = async (e: React.FormEvent) => {
+  const fetchGoalSummaries = async () => {
+    try {
+      setGoalsLoading(true);
+      const response = await fetch(`${API_URL}/api/goals`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success) {
+        setGoalSummaries(data.data);
+      } else {
+        setDataNotice({ type: 'error', message: data.error || 'Failed to load goals' });
+      }
+    } catch (err) {
+      setDataNotice({ type: 'error', message: (err as Error).message });
+    } finally {
+      setGoalsLoading(false);
+    }
+  };
+
+  const handleCreateKey = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -97,6 +136,109 @@ export default function Settings() {
       }
     } catch (err) {
       setError((err as Error).message);
+    }
+  };
+
+  const toggleGoalSelection = (goalId: string) => {
+    setSelectedGoalIds((prev) =>
+      prev.includes(goalId) ? prev.filter((id) => id !== goalId) : [...prev, goalId]
+    );
+  };
+
+  const handleExportGoals = async () => {
+    if (exportMode === 'selected' && selectedGoalIds.length === 0) {
+      setDataNotice({ type: 'error', message: 'Select at least one goal to export.' });
+      return;
+    }
+
+    try {
+      setExportingGoals(true);
+      setDataNotice(null);
+      const params =
+        exportMode === 'selected' && selectedGoalIds.length
+          ? `?goalIds=${encodeURIComponent(selectedGoalIds.join(','))}`
+          : '';
+      const response = await fetch(`${API_URL}/api/goals/export${params}`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Export failed');
+      }
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.href = url;
+      link.download = `harada-goals-${timestamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setDataNotice({
+        type: 'success',
+        message: `Exported ${data.data?.count ?? 0} goal${(data.data?.count ?? 0) === 1 ? '' : 's'}.`,
+      });
+    } catch (err) {
+      setDataNotice({ type: 'error', message: (err as Error).message });
+    } finally {
+      setExportingGoals(false);
+    }
+  };
+
+  const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImportingGoals(true);
+      setDataNotice(null);
+      const text = await file.text();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(text);
+      } catch (parseErr) {
+        throw new Error('Selected file is not valid JSON');
+      }
+
+      const goalsPayload = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed.goals)
+          ? parsed.goals
+          : parsed.data && Array.isArray(parsed.data.goals)
+            ? parsed.data.goals
+            : null;
+
+      if (!goalsPayload || goalsPayload.length === 0) {
+        throw new Error('No goals found in uploaded file.');
+      }
+
+      const response = await fetch(`${API_URL}/api/goals/import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ goals: goalsPayload }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Import failed');
+      }
+
+      const summary = data.data?.imported;
+      setDataNotice({
+        type: 'success',
+        message: `Imported ${summary?.goals ?? 0} goal${summary?.goals === 1 ? '' : 's'} (${summary?.subGoals ?? 0} sub-goals, ${summary?.actions ?? 0} actions).`,
+      });
+      fetchGoalSummaries();
+    } catch (err) {
+      setDataNotice({ type: 'error', message: (err as Error).message });
+    } finally {
+      setImportingGoals(false);
+      event.target.value = '';
     }
   };
 
@@ -184,6 +326,16 @@ export default function Settings() {
             }`}
           >
             Display Settings
+          </button>
+          <button
+            onClick={() => setActiveTab('data')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'data'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Data Import/Export
           </button>
         </div>
 
@@ -662,6 +814,119 @@ curl -X POST "$API_URL/api/guestbook" \\
                   </button>
                 ))}
               </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'data' && (
+          <div className="bg-white rounded-lg shadow-lg p-6 space-y-8">
+            {dataNotice && (
+              <div
+                className={`px-4 py-3 rounded ${
+                  dataNotice.type === 'success'
+                    ? 'bg-green-50 text-green-800 border border-green-200'
+                    : 'bg-red-50 text-red-800 border border-red-200'
+                }`}
+              >
+                {dataNotice.message}
+              </div>
+            )}
+
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Export Goals to JSON</h3>
+                <p className="text-sm text-gray-600">
+                  Download a snapshot of your goals, sub-goals, actions, and activity logs. You can re-import the file later
+                  or share it with trusted automation.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="export-mode"
+                    value="all"
+                    checked={exportMode === 'all'}
+                    onChange={() => setExportMode('all')}
+                  />
+                  Export all goals
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="export-mode"
+                    value="selected"
+                    checked={exportMode === 'selected'}
+                    onChange={() => setExportMode('selected')}
+                  />
+                  Choose specific goals
+                </label>
+              </div>
+              {exportMode === 'selected' && (
+                <div className="border rounded-lg p-3 bg-gray-50 max-h-64 overflow-y-auto text-sm">
+                  {goalsLoading ? (
+                    <p className="text-gray-500">Loading goals...</p>
+                  ) : goalSummaries.length === 0 ? (
+                    <p className="text-gray-500">No goals available.</p>
+                  ) : (
+                    goalSummaries.map((goal) => (
+                      <label key={goal.id} className="flex items-center gap-3 py-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedGoalIds.includes(goal.id)}
+                          onChange={() => toggleGoalSelection(goal.id)}
+                        />
+                        <div>
+                          <div className="font-medium text-gray-800">{goal.title}</div>
+                          <div className="text-xs text-gray-500">
+                            Status: {goal.status} • Created {new Date(goal.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleExportGoals}
+                disabled={exportingGoals || (exportMode === 'selected' && selectedGoalIds.length === 0)}
+                className={`px-4 py-2 rounded text-white ${
+                  exportingGoals ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {exportingGoals ? 'Preparing...' : 'Download JSON'}
+              </button>
+            </section>
+
+            <section className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Import Goals from JSON</h3>
+                <p className="text-sm text-gray-600">
+                  Upload a JSON file previously exported from Harada. Imported goals are added alongside your existing ones
+                  with new IDs.
+                </p>
+              </div>
+              <label
+                htmlFor="goal-import-input"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 cursor-pointer hover:bg-gray-50 w-fit"
+              >
+                <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                {importingGoals ? 'Uploading...' : 'Choose JSON file'}
+                <input
+                  id="goal-import-input"
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={handleImportFile}
+                  disabled={importingGoals}
+                />
+              </label>
+              <p className="text-xs text-gray-500">
+                Tip: export first to see the exact schema. Import always appends new goals; it never overwrites existing ones.
+              </p>
             </section>
           </div>
         )}

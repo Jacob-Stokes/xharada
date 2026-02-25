@@ -5,12 +5,14 @@ interface ActionItem {
   id: string;
   position: number;
   title: string;
+  description?: string | null;
 }
 
 interface SubGoal {
   id: string;
   position: number;
   title: string;
+  description?: string | null;
   actions: ActionItem[];
 }
 
@@ -21,8 +23,8 @@ interface FullGridViewProps {
   onSubGoalClick: (subGoal: SubGoal) => void;
   onAddSubGoal: (position: number) => void;
   onAddAction: (subGoalId: string, position: number) => void;
-  onUpdateSubGoal?: (id: string, title: string) => void;
-  onUpdateAction?: (id: string, title: string) => void;
+  onUpdateSubGoal?: (subGoal: SubGoal) => void;
+  onUpdateAction?: (action: ActionItem) => void;
   gridAspect: 'square' | 'rectangle';
   onCenterClick?: () => void;
   subGoalColors: Record<number, string>;
@@ -232,12 +234,7 @@ export default function FullGridView({
           }
           onContextMenu={(e) => {
             e.preventDefault();
-            if (onUpdateSubGoal) {
-              const newTitle = prompt('Rename sub-goal:', subGoal.title);
-              if (newTitle && newTitle.trim()) {
-                onUpdateSubGoal(subGoal.id, newTitle.trim());
-              }
-            }
+            onUpdateSubGoal?.(subGoal);
           }}
           title="Click to view actions | Right-click to rename"
         >
@@ -342,12 +339,7 @@ export default function FullGridView({
           onClick={() => onActionClick(action)}
           onContextMenu={(e) => {
             e.preventDefault();
-            if (onUpdateAction) {
-              const newTitle = prompt('Edit action:', action.title);
-              if (newTitle && newTitle.trim()) {
-                onUpdateAction(action.id, newTitle.trim());
-              }
-            }
+            onUpdateAction?.(action);
           }}
           draggable={Boolean(onActionDragStart)}
           onDragStart={(e) => {
