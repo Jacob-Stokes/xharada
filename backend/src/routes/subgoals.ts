@@ -79,48 +79,35 @@ router.post('/:subgoalId/reorder', (req: Request, res: Response) => {
     const now = new Date().toISOString();
 
     const runReorder = db.transaction(() => {
+      const sourcePos = subGoal.position;
+      const targetPos = targetPosition;
+
+      if (sourcePos === targetPos) {
+        return; // No-op
+      }
+
+      // Simple swap strategy using position -1 as temporary
+      // Step 1: Move source to -1 (temporary position outside normal range)
+      db.prepare('UPDATE sub_goals SET position = -1, updated_at = ? WHERE id = ?').run(
+        now,
+        subGoal.id
+      );
+
+      // Step 2: Move target to source's old position (if there's something there)
       if (conflicting) {
-        // Strategy: Move source to position 0 (temp), shift others, then move source to target
-        // This avoids all constraint violations
-        const sourcePos = subGoal.position;
-        const targetPos = targetPosition;
-
-        // Step 1: Move source to position 0 (temporary, won't conflict)
-        db.prepare('UPDATE sub_goals SET position = 0, updated_at = ? WHERE id = ?').run(
-          now,
-          subGoal.id
-        );
-
-        // Step 2: Shift items in the affected range
-        if (sourcePos < targetPos) {
-          // Moving down: shift items between source and target up by 1
-          db.prepare(`
-            UPDATE sub_goals
-            SET position = position - 1, updated_at = ?
-            WHERE primary_goal_id = ? AND position > ? AND position <= ?
-          `).run(now, subGoal.primary_goal_id, sourcePos, targetPos);
-        } else {
-          // Moving up: shift items between target and source down by 1
-          db.prepare(`
-            UPDATE sub_goals
-            SET position = position + 1, updated_at = ?
-            WHERE primary_goal_id = ? AND position >= ? AND position < ?
-          `).run(now, subGoal.primary_goal_id, targetPos, sourcePos);
-        }
-
-        // Step 3: Move source to final target position
         db.prepare('UPDATE sub_goals SET position = ?, updated_at = ? WHERE id = ?').run(
-          targetPos,
+          sourcePos,
           now,
-          subGoal.id
-        );
-      } else {
-        db.prepare('UPDATE sub_goals SET position = ?, updated_at = ? WHERE id = ?').run(
-          targetPosition,
-          now,
-          subGoal.id
+          conflicting.id
         );
       }
+
+      // Step 3: Move source to target position
+      db.prepare('UPDATE sub_goals SET position = ?, updated_at = ? WHERE id = ?').run(
+        targetPos,
+        now,
+        subGoal.id
+      );
     });
 
     runReorder();
