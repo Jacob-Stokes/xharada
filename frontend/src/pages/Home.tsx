@@ -15,6 +15,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [showAgentDialog, setShowAgentDialog] = useState(false);
+  const [pastedApiKey, setPastedApiKey] = useState<string>('');
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -71,6 +74,30 @@ export default function Home() {
     }
   };
 
+  const handleOpenAgentDialog = () => {
+    setShowAgentDialog(true);
+  };
+
+  const getAgentLandingUrl = () => {
+    if (!pastedApiKey.trim()) return '';
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/agents?apiKey=${pastedApiKey}`;
+  };
+
+  const handleCopyUrl = () => {
+    const url = getAgentLandingUrl();
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePreview = () => {
+    const url = getAgentLandingUrl();
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
@@ -79,7 +106,13 @@ export default function Home() {
             <h1 className="text-4xl font-bold text-gray-900">Harada Method</h1>
             <p className="text-gray-600 mt-2">Your Goal Planning System</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap justify-end">
+            <button
+              onClick={handleOpenAgentDialog}
+              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-900 border border-blue-200 rounded hover:bg-blue-50"
+            >
+              Agent Landing
+            </button>
             <Link
               to="/settings"
               state={{ from: location.pathname }}
@@ -167,6 +200,91 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Agent Landing Dialog */}
+      {showAgentDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Agent Landing Page</h2>
+              <button
+                onClick={() => setShowAgentDialog(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Paste Your API Key
+                </label>
+                <input
+                  type="text"
+                  value={pastedApiKey}
+                  onChange={(e) => setPastedApiKey(e.target.value)}
+                  placeholder="Paste your API key here..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Don't have an API key?{' '}
+                  <Link
+                    to="/settings"
+                    className="text-blue-600 hover:underline"
+                    onClick={() => setShowAgentDialog(false)}
+                  >
+                    Create one in Settings
+                  </Link>
+                </p>
+              </div>
+
+              {pastedApiKey.trim() && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Agent Landing URL
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={getAgentLandingUrl()}
+                        readOnly
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                      />
+                      <button
+                        onClick={handleCopyUrl}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+                      >
+                        {copied ? '✓ Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Share this URL with AI agents. They can access your goal data without logging in.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={handlePreview}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Preview Landing Page
+                    </button>
+                    <Link
+                      to="/settings"
+                      onClick={() => setShowAgentDialog(false)}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                    >
+                      Manage API Keys
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

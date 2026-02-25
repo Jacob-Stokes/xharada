@@ -93,6 +93,9 @@ export const api = {
   // User
   getUserSummary: () => apiRequest<any>('/api/user/summary'),
 
+  // API Keys
+  getApiKeys: () => apiRequest<any[]>('/api/auth/api-keys'),
+
   // Activity Logs
   getActionLogs: (actionId: string, params?: { startDate?: string; endDate?: string; type?: string }) => {
     const query = new URLSearchParams();

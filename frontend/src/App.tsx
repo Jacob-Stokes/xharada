@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import GoalGrid from './pages/GoalGrid';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
+import Agents from './pages/Agents';
 import { api } from './api/client';
 
 // Protected Route Component
@@ -66,6 +67,10 @@ function App() {
               <Settings />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/agents"
+          element={<Agents />}
         />
       </Routes>
     </BrowserRouter>
