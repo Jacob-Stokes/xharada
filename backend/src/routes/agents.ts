@@ -47,6 +47,11 @@ router.get('/brief', (req: Request, res: Response) => {
       success: true,
       data: {
         generatedAt: new Date().toISOString(),
+        overview: {
+          title: "Jacob's Harada Method Tracker",
+          description: "This is Jacob's single source of truth for life goals using the Harada Method framework. Review the overview below, then use the API section to authenticate and interact with the grid programmatically.",
+          framework: "Harada Method: 1 primary goal → 8 sub-goals → 8 actions each (64 total actions)",
+        },
         guidance: {
           workflow: [
             'Call GET /api/user/summary?level=detailed for the full grid.',

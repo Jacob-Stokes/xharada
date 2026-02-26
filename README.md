@@ -162,14 +162,114 @@ npm run dev  # Runs on port 3000
 
 SQLite database stored at `./data/harada.db` (automatically created, not in git).
 
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    users ||--o{ api_keys : "has many"
+    users ||--o{ primary_goals : "has many"
+    users ||--o{ guestbook : "receives"
+
+    primary_goals ||--o{ sub_goals : "contains 8"
+    sub_goals ||--o{ action_items : "contains 8"
+    action_items ||--o{ activity_logs : "has many"
+
+    users {
+        TEXT id PK
+        TEXT username UK
+        TEXT password_hash
+        TEXT email
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    api_keys {
+        TEXT id PK
+        TEXT user_id FK
+        TEXT key_hash
+        TEXT name
+        TEXT last_used_at
+        TEXT created_at
+        TEXT expires_at
+    }
+
+    primary_goals {
+        TEXT id PK
+        TEXT user_id FK
+        TEXT title
+        TEXT description
+        TEXT target_date
+        TEXT status "active|completed|archived"
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    sub_goals {
+        TEXT id PK
+        TEXT primary_goal_id FK
+        INTEGER position "1-8, UNIQUE per goal"
+        TEXT title
+        TEXT description
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    action_items {
+        TEXT id PK
+        TEXT sub_goal_id FK
+        INTEGER position "1-8, UNIQUE per sub-goal"
+        TEXT title
+        TEXT description
+        INTEGER completed "0|1"
+        TEXT completed_at
+        TEXT due_date
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    activity_logs {
+        TEXT id PK
+        TEXT action_item_id FK
+        TEXT log_type "note|progress|completion|media|link"
+        TEXT content
+        TEXT log_date
+        INTEGER duration_minutes
+        REAL metric_value
+        TEXT metric_unit
+        TEXT media_url
+        TEXT media_type "image|video|document|audio"
+        TEXT external_link
+        TEXT mood "motivated|challenged|accomplished|frustrated|neutral"
+        TEXT tags
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    guestbook {
+        TEXT id PK
+        TEXT user_id FK
+        TEXT agent_name
+        TEXT comment
+        TEXT target_type "user|goal|subgoal|action"
+        TEXT target_id
+        TEXT created_at
+    }
+```
+
 ### Schema Overview
-- `users` - User accounts
-- `api_keys` - API keys for AI agents
-- `primary_goals` - Top-level goals
-- `sub_goals` - 8 sub-goals per primary goal
-- `action_items` - 8 actions per sub-goal (64 total per goal)
-- `activity_logs` - Activity tracking logs
-- `guestbook` - AI agent comments and feedback
+- **users** - User accounts with authentication
+- **api_keys** - API keys for AI agents (hashed, expires after configured period)
+- **primary_goals** - Top-level goals (1 per Harada grid)
+- **sub_goals** - 8 sub-goals per primary goal (positions 1-8)
+- **action_items** - 8 actions per sub-goal (64 total per goal, positions 1-8)
+- **activity_logs** - Activity tracking logs with metrics, media, and mood
+- **guestbook** - AI agent comments and feedback at any level
+
+### Key Relationships
+- **1:8:64 Harada Structure**: 1 goal → 8 sub-goals → 8 actions each = 64 actions
+- **Cascade Deletes**: Deleting a goal removes all sub-goals, actions, and logs
+- **Position Constraints**: Sub-goals and actions use UNIQUE(parent_id, position) to enforce grid structure
+- **Flexible Guestbook**: Comments can target user, goal, sub-goal, or action level
 
 ## 🤖 AI Agent Integration Examples
 

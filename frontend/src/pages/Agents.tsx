@@ -3,6 +3,20 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { API_URL } from '../api/client';
 
 interface AgentBriefResponse {
+  generatedAt: string;
+  overview: {
+    title: string;
+    description: string;
+    framework: string;
+  };
+  guidance: {
+    workflow: string[];
+    etiquette: string[];
+  };
+  api: {
+    baseUrl: string;
+    summaryEndpoint: string;
+  };
   goals: {
     id: string;
     title: string;
@@ -16,15 +30,6 @@ interface AgentBriefResponse {
       actions: { id: string; title: string; position: number; lastUpdated?: string }[];
     }[];
   }[];
-  guidance: {
-    workflow: string[];
-    etiquette: string[];
-  };
-  api: {
-    baseUrl: string;
-    summaryEndpoint: string;
-  };
-  generatedAt: string;
 }
 
 export default function Agents() {
@@ -132,10 +137,11 @@ export default function Agents() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-sm text-blue-600">Harada Method · Agent Briefing</p>
-            <h1 className="text-4xl font-bold text-gray-900">Agent Landing Page</h1>
+            <h1 className="text-4xl font-bold text-gray-900">
+              {brief?.overview.title || 'Agent Landing Page'}
+            </h1>
             <p className="text-gray-600 mt-2 max-w-3xl">
-              Welcome! This is Jacob’s single source of truth for life goals. Review the overview below,
-              then use the API section to authenticate and interact with the grid programmatically.
+              {brief?.overview.description || 'Loading briefing information...'}
             </p>
           </div>
           <Link
@@ -201,9 +207,9 @@ export default function Agents() {
                 </pre>
               </div>
               <div className="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900">Agent Brief</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Framework Overview</h3>
                 <p className="text-sm text-gray-600">
-                  Harada grid = 1 primary goal → 8 sub-goals → 8 actions each. Keep the structure intact.
+                  {brief.overview.framework}
                 </p>
                 <p className="text-xs text-gray-500">
                   Generated: {new Date(brief.generatedAt).toLocaleString()}
