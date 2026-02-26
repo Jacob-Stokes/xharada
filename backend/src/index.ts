@@ -10,6 +10,7 @@ import logsRouter from './routes/logs';
 import authRouter from './routes/auth';
 import guestbookRouter from './routes/guestbook';
 import { requireAuth, optionalAuth } from './middleware/auth';
+import agentsRouter from './routes/agents';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -119,6 +120,7 @@ app.use('/api/actions', requireAuth, actionsRouter);
 app.use('/api/user', requireAuth, userRouter);
 app.use('/api/logs', requireAuth, logsRouter);
 app.use('/api/guestbook', requireAuth, guestbookRouter);
+app.use('/api/agents', optionalAuth, agentsRouter);
 
 // Start server
 app.listen(PORT, () => {

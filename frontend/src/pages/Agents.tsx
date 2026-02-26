@@ -2,25 +2,34 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { API_URL } from '../api/client';
 
-interface UserSummary {
-  id: string;
-  title: string;
-  status: string;
-  subGoals: {
+interface AgentBriefResponse {
+  goals: {
     id: string;
     title: string;
-    position: number;
-    actions: {
+    status: string;
+    description?: string | null;
+    created_at: string;
+    subGoals: {
       id: string;
       title: string;
       position: number;
+      actions: { id: string; title: string; position: number; lastUpdated?: string }[];
     }[];
   }[];
+  guidance: {
+    workflow: string[];
+    etiquette: string[];
+  };
+  api: {
+    baseUrl: string;
+    summaryEndpoint: string;
+  };
+  generatedAt: string;
 }
 
 export default function Agents() {
   const [searchParams] = useSearchParams();
-  const [goals, setGoals] = useState<UserSummary[]>([]);
+  const [brief, setBrief] = useState<AgentBriefResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string>('');
@@ -34,20 +43,19 @@ export default function Agents() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!apiKey) {
-      setLoading(false);
-      return;
-    }
-
+    const requestedJson = searchParams.get('format') === 'json';
     const fetchSummary = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`${API_URL}/api/user/summary`, {
-          headers: {
-            'x-api-key': apiKey,
-          },
+        const headers: Record<string, string> = {};
+        if (apiKey) {
+          headers['x-api-key'] = apiKey;
+        }
+        const response = await fetch(`${API_URL}/api/agents/brief`, {
+          credentials: apiKey ? 'omit' : 'include',
+          headers,
         });
 
         if (!response.ok) {
@@ -55,24 +63,30 @@ export default function Agents() {
         }
 
         const result = await response.json();
-        const data = result.data || result;
-        setGoals(Array.isArray(data) ? data : []);
+        setBrief(result.data);
+
+        if (requestedJson) {
+          const pretty = JSON.stringify(result.data, null, 2);
+          const blob = new Blob([pretty], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          window.location.href = url;
+          return;
+        }
       } catch (err) {
         setError((err as Error).message);
-        setGoals([]);
+        setBrief(null);
       } finally {
         setLoading(false);
       }
     };
     fetchSummary();
-  }, [apiKey]);
+  }, [apiKey, searchParams]);
 
   const renderGoalOverview = () => {
-    if (goals.length === 0) {
+    if (!brief || brief.goals.length === 0) {
       return <p className="text-gray-500">No goals defined yet.</p>;
     }
-
-    return goals.map((goal) => (
+    return brief.goals.map((goal) => (
       <div key={goal.id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>

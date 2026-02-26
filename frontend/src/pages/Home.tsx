@@ -18,6 +18,8 @@ export default function Home() {
   const [showAgentDialog, setShowAgentDialog] = useState(false);
   const [pastedApiKey, setPastedApiKey] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [creatingAgentKey, setCreatingAgentKey] = useState(false);
+  const [agentKeyNotice, setAgentKeyNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -78,10 +80,15 @@ export default function Home() {
     setShowAgentDialog(true);
   };
 
-  const getAgentLandingUrl = () => {
+  const getAgentLandingUrl = (format?: 'json') => {
     if (!pastedApiKey.trim()) return '';
     const baseUrl = window.location.origin;
-    return `${baseUrl}/agents?apiKey=${pastedApiKey}`;
+    const base = `${baseUrl}/agents`;
+    const params = new URLSearchParams({ apiKey: pastedApiKey });
+    if (format === 'json') {
+      params.set('format', 'json');
+    }
+    return `${base}?${params.toString()}`;
   };
 
   const handleCopyUrl = () => {
@@ -95,6 +102,36 @@ export default function Home() {
     const url = getAgentLandingUrl();
     if (url) {
       window.open(url, '_blank');
+    }
+  };
+
+  const handleGenerateAgentKey = async () => {
+    if (creatingAgentKey) return;
+    try {
+      setCreatingAgentKey(true);
+      setAgentKeyNotice(null);
+      const response = await fetch(`${API_URL}/api/auth/api-keys`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: `Agent Landing ${new Date().toLocaleString()}`,
+          expiresInDays: 365,
+        }),
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create API key');
+      }
+      const key = data.data?.key;
+      setPastedApiKey(key || '');
+      setAgentKeyNotice({ type: 'success', message: 'New API key generated. Copy and store it securely.' });
+    } catch (err) {
+      setAgentKeyNotice({ type: 'error', message: (err as Error).message });
+    } finally {
+      setCreatingAgentKey(false);
     }
   };
 
@@ -227,16 +264,34 @@ export default function Home() {
                   placeholder="Paste your API key here..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Don't have an API key?{' '}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGenerateAgentKey}
+                    disabled={creatingAgentKey}
+                    className={`px-4 py-2 rounded text-sm text-white ${
+                      creatingAgentKey ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {creatingAgentKey ? 'Generating…' : 'Generate API Key'}
+                  </button>
                   <Link
                     to="/settings"
-                    className="text-blue-600 hover:underline"
+                    className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
                     onClick={() => setShowAgentDialog(false)}
                   >
-                    Create one in Settings
+                    Manage Keys in Settings
                   </Link>
-                </p>
+                </div>
+                {agentKeyNotice && (
+                  <p
+                    className={`mt-2 text-xs ${
+                      agentKeyNotice.type === 'success' ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {agentKeyNotice.message}
+                  </p>
+                )}
               </div>
 
               {pastedApiKey.trim() && (
@@ -245,22 +300,41 @@ export default function Home() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Agent Landing URL
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={getAgentLandingUrl()}
-                        readOnly
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
-                      />
-                      <button
-                        onClick={handleCopyUrl}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-                      >
-                        {copied ? '✓ Copied!' : 'Copy'}
-                      </button>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={getAgentLandingUrl()}
+                          readOnly
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                        />
+                        <button
+                          onClick={handleCopyUrl}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+                        >
+                          {copied ? '✓ Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={getAgentLandingUrl('json')}
+                          readOnly
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                        />
+                        <button
+                          onClick={() => {
+                            const url = getAgentLandingUrl('json');
+                            navigator.clipboard.writeText(url);
+                          }}
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+                        >
+                          Copy JSON URL
+                        </button>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      Share this URL with AI agents. They can access your goal data without logging in.
+                      Share the UI link with browser-based agents. Use the JSON link for CLI agents that want raw data.
                     </p>
                   </div>
 
