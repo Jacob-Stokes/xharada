@@ -167,7 +167,7 @@ The `cv-app/` directory contains a second application that reuses the same stack
 
 ### MCP Server
 
-The `mcp/harada-mcp/` directory contains an MCP server that allows Claude Desktop and other MCP clients to call Harada endpoints directly. It wraps the `/api/user/summary` endpoint, goal/sub-goal/action creation, activity logging, and guestbook operations into MCP tools.
+For Claude Desktop integration, see the separate [xharada-mcp](https://github.com/Jacob-Stokes/xharada-mcp) repository. It provides an MCP server that allows Claude Desktop and other MCP clients to call Harada endpoints directly, wrapping goal/sub-goal/action creation, activity logging, and guestbook operations into MCP tools.
 
 ## Database
 
