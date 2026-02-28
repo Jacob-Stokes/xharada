@@ -139,9 +139,12 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900">Harada Method</h1>
-            <p className="text-gray-600 mt-2">Your Goal Planning System</p>
+          <div className="flex items-center gap-4">
+            <img src="/logo.svg" alt="xharada logo" className="w-16 h-16" />
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">Harada Method</h1>
+              <p className="text-gray-600 mt-2">Your Goal Planning System</p>
+            </div>
           </div>
           <div className="flex gap-3 flex-wrap justify-end">
             <button

@@ -8,6 +8,7 @@ build/
 
 # Database
 data/
+cv-app/data/
 *.db
 *.db-journal
 
