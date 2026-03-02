@@ -54,7 +54,6 @@ export default function Login() {
             <rect x="0" y="200" width="100" height="100" fill="hsl(240, 100%, 75%)" stroke="white" strokeWidth="2"/>
             <rect x="100" y="200" width="100" height="100" fill="hsl(270, 100%, 75%)" stroke="white" strokeWidth="2"/>
             <rect x="200" y="200" width="100" height="100" fill="hsl(300, 100%, 75%)" stroke="white" strokeWidth="2"/>
-            <path d="M 120 120 L 180 180 M 180 120 L 120 180" stroke="rgba(0, 0, 0, 0.8)" strokeWidth="20" strokeLinecap="round" fill="none"/>
           </svg>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">xharada</h1>
           <p className="text-gray-600">Sign in to access your goals</p>
