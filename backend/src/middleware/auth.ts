@@ -12,6 +12,16 @@ declare module 'express-serve-static-core' {
   }
 }
 
+// Validate an API key record: check hash match and expiration
+function validateApiKey(apiKey: string, record: any): boolean {
+  // Check expiration
+  if (record.expires_at && new Date(record.expires_at) < new Date()) {
+    return false;
+  }
+  // Check hash
+  return bcrypt.compareSync(apiKey, record.key_hash);
+}
+
 // Middleware to check if user is authenticated via session OR API key
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   // Check for API key in header first, then query param
@@ -21,7 +31,6 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     // Validate API key - extract key ID from format: {uuid}-{randomstring}
     // UUID is 36 chars (including dashes), e.g., "1e1be6bb-0e71-438d-b92f-55a4c6da2f54"
     const keyId = apiKey.substring(0, 36);
-    console.log('API Key ID:', keyId);
 
     const apiKeyRecord = db.prepare(`
       SELECT ak.*, u.id as user_id, u.username
@@ -30,22 +39,15 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
       WHERE ak.id = ?
     `).get(keyId) as any;
 
-    console.log('API Key Record Found:', !!apiKeyRecord);
+    if (apiKeyRecord && validateApiKey(apiKey, apiKeyRecord)) {
+      // Update last used
+      db.prepare(`UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?`).run(apiKeyRecord.id);
 
-    if (apiKeyRecord) {
-      const matches = bcrypt.compareSync(apiKey, apiKeyRecord.key_hash);
-      console.log('Hash matches:', matches);
-
-      if (matches) {
-        // Update last used
-        db.prepare(`UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?`).run(apiKeyRecord.id);
-
-        req.user = {
-          id: apiKeyRecord.user_id,
-          username: apiKeyRecord.username
-        };
-        return next();
-      }
+      req.user = {
+        id: apiKeyRecord.user_id,
+        username: apiKeyRecord.username
+      };
+      return next();
     }
   }
 
@@ -81,7 +83,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
       WHERE ak.id = ?
     `).get(keyId) as any;
 
-    if (apiKeyRecord && bcrypt.compareSync(apiKey, apiKeyRecord.key_hash)) {
+    if (apiKeyRecord && validateApiKey(apiKey, apiKeyRecord)) {
       db.prepare(`UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?`).run(apiKeyRecord.id);
       req.user = {
         id: apiKeyRecord.user_id,
