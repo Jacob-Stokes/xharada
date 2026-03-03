@@ -5,6 +5,7 @@ import GoalGrid from './pages/GoalGrid';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
 import Agents from './pages/Agents';
+import SharedGoalView from './pages/SharedGoalView';
 import { api } from './api/client';
 
 // Protected Route Component
@@ -71,6 +72,10 @@ function App() {
         <Route
           path="/agents"
           element={<Agents />}
+        />
+        <Route
+          path="/share/:token"
+          element={<SharedGoalView />}
         />
       </Routes>
     </BrowserRouter>

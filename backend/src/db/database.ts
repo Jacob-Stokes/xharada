@@ -104,6 +104,23 @@ CREATE TABLE IF NOT EXISTS guestbook (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Shared goal links for public viewing
+CREATE TABLE IF NOT EXISTS shared_goals (
+  id TEXT PRIMARY KEY,
+  goal_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  show_logs INTEGER DEFAULT 0 CHECK(show_logs IN (0, 1)),
+  show_guestbook INTEGER DEFAULT 0 CHECK(show_guestbook IN (0, 1)),
+  is_active INTEGER DEFAULT 1 CHECK(is_active IN (0, 1)),
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (goal_id) REFERENCES primary_goals(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_shared_goals_token ON shared_goals(token);
+CREATE INDEX IF NOT EXISTS idx_shared_goals_goal ON shared_goals(goal_id);
+
 -- Indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_sub_goals_primary_goal ON sub_goals(primary_goal_id);
 CREATE INDEX IF NOT EXISTS idx_action_items_sub_goal ON action_items(sub_goal_id);
@@ -208,6 +225,17 @@ export interface ActivityLog {
   tags: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface SharedGoal {
+  id: string;
+  goal_id: string;
+  user_id: string;
+  token: string;
+  show_logs: number;
+  show_guestbook: number;
+  is_active: number;
+  created_at: string;
 }
 
 export interface GuestbookEntry {

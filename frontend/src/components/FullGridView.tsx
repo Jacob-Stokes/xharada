@@ -40,6 +40,7 @@ interface FullGridViewProps {
   onActionDragStart?: (subGoalId: string, action: ActionItem) => void;
   onActionDrop?: (subGoalId: string, targetPosition: number) => void;
   onActionDragEnd?: () => void;
+  readOnly?: boolean;
 }
 
 export default function FullGridView({
@@ -62,7 +63,8 @@ export default function FullGridView({
   onSubGoalDragEnd,
   onActionDragStart,
   onActionDrop,
-  onActionDragEnd
+  onActionDragEnd,
+  readOnly = false
 }: FullGridViewProps) {
 
   const getSubGoalAtPosition = (position: number): SubGoal | undefined => {
@@ -127,9 +129,9 @@ export default function FullGridView({
               );
             })}
             <div
-              className="col-start-2 row-start-2 flex items-center justify-center text-center font-bold text-sm sm:text-lg px-2 rounded-md cursor-pointer bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              onClick={onCenterClick}
-              title="Click to edit description"
+              className={`col-start-2 row-start-2 flex items-center justify-center text-center font-bold text-sm sm:text-lg px-2 rounded-md bg-blue-600 text-white transition-colors ${readOnly ? '' : 'cursor-pointer hover:bg-blue-700'}`}
+              onClick={readOnly ? undefined : onCenterClick}
+              title={readOnly ? undefined : "Click to edit description"}
             >
               {goalTitle}
             </div>
@@ -145,9 +147,9 @@ export default function FullGridView({
         style={{ aspectRatio: gridAspect === 'square' ? '1' : 'auto' }}
       >
         <div
-          onClick={onCenterClick}
-          className="w-full h-full bg-blue-600 text-white flex items-center justify-center font-bold text-base sm:text-lg cursor-pointer hover:bg-blue-700 transition-colors text-center px-4 rounded-md"
-          title="Click to edit description"
+          onClick={readOnly ? undefined : onCenterClick}
+          className={`w-full h-full bg-blue-600 text-white flex items-center justify-center font-bold text-base sm:text-lg transition-colors text-center px-4 rounded-md ${readOnly ? '' : 'cursor-pointer hover:bg-blue-700'}`}
+          title={readOnly ? undefined : "Click to edit description"}
         >
           {goalTitle}
         </div>
@@ -182,6 +184,9 @@ export default function FullGridView({
       const subGoal = getSubGoalAtPosition(subGoalPos);
 
       if (!subGoal) {
+        if (readOnly) {
+          return <div className="bg-gray-100 border border-gray-200 h-full"></div>;
+        }
         return (
           <div
             onClick={() => onAddSubGoal(subGoalPos)}
@@ -206,24 +211,22 @@ export default function FullGridView({
       const textColor = getReadableTextColor(color);
       return (
         <div
-          className="p-1 h-full flex items-center justify-center cursor-pointer rounded"
+          className={`p-1 h-full flex items-center justify-center rounded ${readOnly ? '' : 'cursor-pointer'}`}
           style={{
             backgroundColor: color,
             border: `2px solid ${darkenColor(color, 12)}`,
             color: textColor,
           }}
-          onClick={() => onSubGoalClick(subGoal)}
-          draggable={Boolean(onSubGoalDragStart)}
-          onDragStart={(e) => {
+          onClick={readOnly ? undefined : () => onSubGoalClick(subGoal)}
+          draggable={readOnly ? false : Boolean(onSubGoalDragStart)}
+          onDragStart={readOnly ? undefined : (e) => {
             if (!onSubGoalDragStart) return;
             e.dataTransfer.effectAllowed = 'move';
             onSubGoalDragStart(subGoal);
           }}
-          onDragEnd={() => {
-            onSubGoalDragEnd?.();
-          }}
-          onDragOver={onSubGoalDrop ? allowDrop : undefined}
-          onDrop={
+          onDragEnd={readOnly ? undefined : () => { onSubGoalDragEnd?.(); }}
+          onDragOver={readOnly ? undefined : (onSubGoalDrop ? allowDrop : undefined)}
+          onDrop={readOnly ? undefined : (
             onSubGoalDrop
               ? (e) => {
                   e.preventDefault();
@@ -231,12 +234,12 @@ export default function FullGridView({
                   onSubGoalDrop(subGoalPos);
                 }
               : undefined
-          }
-          onContextMenu={(e) => {
+          )}
+          onContextMenu={readOnly ? undefined : (e) => {
             e.preventDefault();
             onUpdateSubGoal?.(subGoal);
           }}
-          title="Click to view actions | Right-click to rename"
+          title={readOnly ? subGoal.title : "Click to view actions | Right-click to rename"}
         >
           <div className="font-semibold text-xs text-center break-words">{subGoal.title}</div>
         </div>
@@ -314,6 +317,9 @@ export default function FullGridView({
         : '#111827';
 
       if (!action) {
+        if (readOnly) {
+          return <div className="bg-gray-50 border border-gray-200 h-full"></div>;
+        }
         return (
           <div
             onClick={() => onAddAction(subGoal.id, actionInfo.actionPos)}
@@ -337,21 +343,19 @@ export default function FullGridView({
       return (
         <div
           onClick={() => onActionClick(action)}
-          onContextMenu={(e) => {
+          onContextMenu={readOnly ? undefined : (e) => {
             e.preventDefault();
             onUpdateAction?.(action);
           }}
-          draggable={Boolean(onActionDragStart)}
-          onDragStart={(e) => {
+          draggable={readOnly ? false : Boolean(onActionDragStart)}
+          onDragStart={readOnly ? undefined : (e) => {
             if (!onActionDragStart) return;
             e.dataTransfer.effectAllowed = 'move';
             onActionDragStart(subGoal.id, action);
           }}
-          onDragEnd={() => {
-            onActionDragEnd?.();
-          }}
-          onDragOver={onActionDrop ? allowDrop : undefined}
-          onDrop={
+          onDragEnd={readOnly ? undefined : () => { onActionDragEnd?.(); }}
+          onDragOver={readOnly ? undefined : (onActionDrop ? allowDrop : undefined)}
+          onDrop={readOnly ? undefined : (
             onActionDrop
               ? (e) => {
                   e.preventDefault();
@@ -359,14 +363,14 @@ export default function FullGridView({
                   onActionDrop(subGoal.id, actionInfo.actionPos);
                 }
               : undefined
-          }
-          className="border rounded hover:opacity-90 p-1 cursor-pointer text-xs h-full flex items-center justify-center"
+          )}
+          className={`border rounded p-1 text-xs h-full flex items-center justify-center ${readOnly ? '' : 'cursor-pointer hover:opacity-90'}`}
           style={{
             backgroundColor: actionBg,
             borderColor: actionColorSettings.inherit ? parentColor : '#d1d5db',
             color: actionTextColor,
           }}
-          title={action.title + ' (Right-click to edit)'}
+          title={readOnly ? action.title : action.title + ' (Right-click to edit)'}
         >
           <div className="text-center break-words">{action.title}</div>
         </div>

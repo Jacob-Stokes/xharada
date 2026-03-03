@@ -11,6 +11,7 @@ import authRouter from './routes/auth';
 import guestbookRouter from './routes/guestbook';
 import { requireAuth, optionalAuth } from './middleware/auth';
 import agentsRouter from './routes/agents';
+import { shareManagementRouter, sharePublicRouter } from './routes/share';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -121,6 +122,8 @@ app.use('/api/user', requireAuth, userRouter);
 app.use('/api/logs', requireAuth, logsRouter);
 app.use('/api/guestbook', requireAuth, guestbookRouter);
 app.use('/api/agents', optionalAuth, agentsRouter);
+app.use('/api/share', requireAuth, shareManagementRouter);
+app.use('/api/shared', sharePublicRouter);
 
 // Start server
 app.listen(PORT, () => {

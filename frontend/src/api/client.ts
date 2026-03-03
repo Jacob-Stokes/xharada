@@ -118,4 +118,23 @@ export const api = {
     method: 'DELETE',
   }),
   getActionStats: (actionId: string) => apiRequest<any>(`/api/logs/action/${actionId}/stats`),
+
+  // Share links
+  createShareLink: (data: { goal_id: string; show_logs: boolean; show_guestbook: boolean }) =>
+    apiRequest<any>('/api/share', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getShareLinks: (goalId?: string) => {
+    const query = goalId ? `?goal_id=${goalId}` : '';
+    return apiRequest<any[]>(`/api/share${query}`);
+  },
+  deleteShareLink: (shareId: string) =>
+    apiRequest<any>(`/api/share/${shareId}`, { method: 'DELETE' }),
+  getSharedGoal: async (token: string) => {
+    const response = await fetch(`${API_URL}/api/shared/${token}/goal`);
+    const parsed = await response.json();
+    if (!parsed.success) throw new Error(parsed.error || 'Failed to load shared goal');
+    return parsed.data;
+  },
 };

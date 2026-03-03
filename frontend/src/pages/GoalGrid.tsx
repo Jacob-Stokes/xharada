@@ -5,6 +5,7 @@ import FullGridView from '../components/FullGridView';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Guestbook from '../components/Guestbook';
+import ShareGoalModal from '../components/ShareGoalModal';
 import { useDisplaySettings } from '../context/DisplaySettingsContext';
 import { getReadableTextColor, lightenColor } from '../utils/color';
 
@@ -75,6 +76,7 @@ export default function GoalGrid() {
   const [textModalValue, setTextModalValue] = useState('');
   const [textModalError, setTextModalError] = useState<string | null>(null);
   const [textModalSubmitting, setTextModalSubmitting] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const subGoalCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const actionSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -561,6 +563,13 @@ export default function GoalGrid() {
               </div>
             )}
 
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              className="print-hidden px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 transition-colors bg-white shadow"
+            >
+              Share Goal
+            </button>
             <button
               type="button"
               onClick={handlePrintGrid}
@@ -1120,6 +1129,15 @@ export default function GoalGrid() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Goal Modal */}
+      {showShareModal && goal && (
+        <ShareGoalModal
+          goalId={goal.id}
+          goalTitle={goal.title}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   );

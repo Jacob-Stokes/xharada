@@ -1,0 +1,345 @@
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { api } from '../api/client';
+import FullGridView from '../components/FullGridView';
+import Guestbook from '../components/Guestbook';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+interface ActivityLog {
+  id: string;
+  log_type: string;
+  content: string;
+  log_date: string;
+  metric_value?: number;
+  metric_unit?: string;
+  mood?: string;
+  created_at: string;
+}
+
+interface ActionItem {
+  id: string;
+  position: number;
+  title: string;
+  description?: string | null;
+  logs?: ActivityLog[];
+}
+
+interface SubGoal {
+  id: string;
+  position: number;
+  title: string;
+  description?: string | null;
+  actions: ActionItem[];
+}
+
+interface Goal {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  subGoals: SubGoal[];
+}
+
+interface GuestbookEntry {
+  id: string;
+  agent_name: string;
+  comment: string;
+  target_type: 'user' | 'goal' | 'subgoal' | 'action';
+  target_id: string | null;
+  created_at: string;
+}
+
+interface ShareSettings {
+  show_logs: boolean;
+  show_guestbook: boolean;
+}
+
+// Default classic palette for shared views
+const DEFAULT_COLORS: Record<number, string> = {
+  1: '#22c55e', 2: '#86efac', 3: '#15803d', 4: '#bbf7d0',
+  5: '#4ade80', 6: '#166534', 7: '#86efac', 8: '#22c55e',
+};
+
+export default function SharedGoalView() {
+  const { token } = useParams<{ token: string }>();
+  const [goal, setGoal] = useState<Goal | null>(null);
+  const [guestbook, setGuestbook] = useState<GuestbookEntry[]>([]);
+  const [shareSettings, setShareSettings] = useState<ShareSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'compact' | 'full'>('full');
+  const [gridAspect, setGridAspect] = useState<'square' | 'rectangle'>('square');
+  const [selectedAction, setSelectedAction] = useState<ActionItem | null>(null);
+
+  useEffect(() => {
+    if (token) loadSharedGoal();
+  }, [token]);
+
+  const loadSharedGoal = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getSharedGoal(token!);
+      setGoal(data.goal);
+      setGuestbook(data.guestbook || []);
+      setShareSettings(data.shareSettings);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMoodEmoji = (mood?: string) => {
+    switch (mood) {
+      case 'motivated': return '🔥';
+      case 'challenged': return '💪';
+      case 'accomplished': return '🏆';
+      case 'frustrated': return '😤';
+      case 'neutral': return '😐';
+      default: return '';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-gray-500">Loading shared goal...</p>
+      </div>
+    );
+  }
+
+  if (error || !goal) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load</h2>
+          <p className="text-gray-600">{error || 'This share link may have been revoked or the goal no longer exists.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-6">
+      {/* Header */}
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{goal.title}</h1>
+            <p className="text-sm text-gray-500 mt-1">Shared goal &middot; Read-only view</p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* View mode toggle */}
+            <div className="flex bg-white rounded shadow border border-gray-200">
+              <button
+                onClick={() => setViewMode('compact')}
+                className={`px-4 py-2 rounded-l text-sm transition-colors ${
+                  viewMode === 'compact'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Compact
+              </button>
+              <button
+                onClick={() => setViewMode('full')}
+                className={`px-4 py-2 rounded-r text-sm transition-colors ${
+                  viewMode === 'full'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Full 9x9 Grid
+              </button>
+            </div>
+
+            {viewMode === 'full' && (
+              <div className="flex bg-white rounded shadow border border-gray-200">
+                <button
+                  onClick={() => setGridAspect('square')}
+                  className={`px-4 py-2 rounded-l text-sm transition-colors ${
+                    gridAspect === 'square'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Square
+                </button>
+                <button
+                  onClick={() => setGridAspect('rectangle')}
+                  className={`px-4 py-2 rounded-r text-sm transition-colors ${
+                    gridAspect === 'rectangle'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Rectangle
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className={`container mx-auto px-4 md:px-6 ${viewMode === 'full' && gridAspect === 'rectangle' ? 'max-w-6xl lg:max-w-[85%]' : 'max-w-6xl'}`}>
+        {viewMode === 'full' ? (
+          <>
+            <FullGridView
+              goalTitle={goal.title}
+              subGoals={goal.subGoals}
+              onActionClick={(action) => setSelectedAction(action)}
+              onSubGoalClick={() => {}}
+              onAddSubGoal={() => {}}
+              onAddAction={() => {}}
+              gridAspect={gridAspect}
+              subGoalColors={DEFAULT_COLORS}
+              actionColorSettings={{ inherit: true, shadePercent: 85 }}
+              centerLayout="single"
+              centerBackdrop="page"
+              readOnly
+            />
+
+            {shareSettings?.show_guestbook && guestbook.length > 0 && (
+              <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
+                <Guestbook preloadedEntries={guestbook} readOnly />
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 8, 0, 4, 7, 6, 5].map((pos) => {
+                if (pos === 0) {
+                  // Center cell
+                  return (
+                    <div
+                      key="center"
+                      className="bg-blue-600 text-white p-6 rounded-lg flex items-center justify-center text-center font-bold text-xl min-h-[120px]"
+                    >
+                      {goal.title}
+                    </div>
+                  );
+                }
+
+                const subGoal = goal.subGoals.find((sg) => sg.position === pos);
+                if (!subGoal) {
+                  return (
+                    <div
+                      key={`empty-${pos}`}
+                      className="bg-gray-100 p-6 rounded-lg flex items-center justify-center min-h-[120px] border-2 border-dashed border-gray-300"
+                    >
+                      <span className="text-gray-400 text-sm">Position {pos}</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={subGoal.id}
+                    className="bg-green-100 p-6 rounded-lg min-h-[120px] border border-green-300"
+                  >
+                    <h3 className="font-semibold text-green-800 mb-2">{subGoal.title}</h3>
+                    <div className="space-y-1">
+                      {subGoal.actions.map((action) => (
+                        <div
+                          key={action.id}
+                          onClick={() => setSelectedAction(action)}
+                          className="text-sm text-gray-700 bg-white rounded px-2 py-1 cursor-pointer hover:bg-green-50 transition-colors"
+                        >
+                          {action.title}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {shareSettings?.show_guestbook && guestbook.length > 0 && (
+              <div className="mt-8 pt-8 border-t">
+                <Guestbook preloadedEntries={guestbook} readOnly />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Action detail modal (read-only, with logs if enabled) */}
+      {selectedAction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">{selectedAction.title}</h2>
+                <button
+                  onClick={() => setSelectedAction(null)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {selectedAction.description && (
+                <div className="prose prose-sm max-w-none text-gray-700 mb-4">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {selectedAction.description}
+                  </ReactMarkdown>
+                </div>
+              )}
+
+              {shareSettings?.show_logs && selectedAction.logs && selectedAction.logs.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-3">Activity Logs</h3>
+                  <div className="space-y-3">
+                    {selectedAction.logs.map((log) => (
+                      <div key={log.id} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-gray-500 uppercase">
+                            {log.log_type} {log.mood && getMoodEmoji(log.mood)}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(log.log_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {log.content && (
+                          <div className="prose prose-sm max-w-none text-gray-700">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {log.content}
+                            </ReactMarkdown>
+                          </div>
+                        )}
+                        {log.metric_value != null && (
+                          <p className="text-sm text-blue-600 mt-1">
+                            {log.metric_value} {log.metric_unit || ''}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {shareSettings?.show_logs && (!selectedAction.logs || selectedAction.logs.length === 0) && (
+                <p className="text-sm text-gray-500">No activity logs for this action.</p>
+              )}
+
+              {!shareSettings?.show_logs && (
+                <p className="text-sm text-gray-400 italic">Activity logs are not included in this share link.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl mt-8">
+        <p className="text-center text-xs text-gray-400">
+          Powered by Harada Method
+        </p>
+      </div>
+    </div>
+  );
+}

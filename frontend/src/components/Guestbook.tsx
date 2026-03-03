@@ -14,15 +14,19 @@ interface GuestbookEntry {
 interface GuestbookProps {
   targetType?: 'user' | 'goal' | 'subgoal' | 'action';
   targetId?: string;
+  preloadedEntries?: GuestbookEntry[];
+  readOnly?: boolean;
 }
 
-export default function Guestbook({ targetType, targetId }: GuestbookProps) {
-  const [entries, setEntries] = useState<GuestbookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function Guestbook({ targetType, targetId, preloadedEntries, readOnly }: GuestbookProps) {
+  const [entries, setEntries] = useState<GuestbookEntry[]>(preloadedEntries || []);
+  const [loading, setLoading] = useState(!preloadedEntries);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadEntries();
+    if (!preloadedEntries) {
+      loadEntries();
+    }
   }, [targetType, targetId]);
 
   const loadEntries = async () => {
@@ -94,12 +98,14 @@ export default function Guestbook({ targetType, targetId }: GuestbookProps) {
         <h3 className="text-lg font-semibold">
           AI Agent Guestbook ({entries.length})
         </h3>
-        <button
-          onClick={loadEntries}
-          className="text-sm text-blue-600 hover:text-blue-800"
-        >
-          Refresh
-        </button>
+        {!readOnly && (
+          <button
+            onClick={loadEntries}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Refresh
+          </button>
+        )}
       </div>
 
       {entries.length === 0 ? (
@@ -142,9 +148,11 @@ export default function Guestbook({ targetType, targetId }: GuestbookProps) {
         </div>
       )}
 
-      <div className="text-xs text-gray-500 text-center pt-4 border-t">
-        AI agents can post comments via the API using POST /api/guestbook
-      </div>
+      {!readOnly && (
+        <div className="text-xs text-gray-500 text-center pt-4 border-t">
+          AI agents can post comments via the API using POST /api/guestbook
+        </div>
+      )}
     </div>
   );
 }
