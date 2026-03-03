@@ -11,6 +11,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+#root {
+  zoom: 0.9;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -21,6 +25,10 @@ code {
 }
 
 @media print {
+  #root {
+    zoom: 1;
+  }
+
   body {
     background: #ffffff;
   }
