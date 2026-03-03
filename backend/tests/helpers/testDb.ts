@@ -95,6 +95,32 @@ export function createTestDb() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS shared_goals (
+      id TEXT PRIMARY KEY,
+      goal_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      token TEXT UNIQUE NOT NULL,
+      show_logs INTEGER DEFAULT 0 CHECK(show_logs IN (0, 1)),
+      show_guestbook INTEGER DEFAULT 0 CHECK(show_guestbook IN (0, 1)),
+      is_active INTEGER DEFAULT 1 CHECK(is_active IN (0, 1)),
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (goal_id) REFERENCES primary_goals(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS agent_etiquette (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      position INTEGER NOT NULL,
+      is_default INTEGER DEFAULT 0 CHECK(is_default IN (0, 1)),
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_shared_goals_token ON shared_goals(token);
+    CREATE INDEX IF NOT EXISTS idx_shared_goals_goal ON shared_goals(goal_id);
+    CREATE INDEX IF NOT EXISTS idx_agent_etiquette_user ON agent_etiquette(user_id);
     CREATE INDEX IF NOT EXISTS idx_sub_goals_primary_goal ON sub_goals(primary_goal_id);
     CREATE INDEX IF NOT EXISTS idx_action_items_sub_goal ON action_items(sub_goal_id);
     CREATE INDEX IF NOT EXISTS idx_action_items_completed ON action_items(completed);

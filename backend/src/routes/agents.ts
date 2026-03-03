@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { db, PrimaryGoal, SubGoal, ActionItem } from '../db/database';
+import crypto from 'crypto';
+import { db, PrimaryGoal, SubGoal, ActionItem, AgentEtiquette } from '../db/database';
 
 const router = Router();
 
@@ -59,12 +60,29 @@ router.get('/brief', (req: Request, res: Response) => {
             'Log progress via POST /api/logs/action/:actionId with metrics.',
             'Encourage via POST /api/guestbook.',
           ],
-          etiquette: [
-            'Keep the Harada structure (goal → sub-goal → 8 actions) intact.',
-            'Use positive, coaching language when writing updates.',
-            'Ask before deleting goals or sub-goals.',
-            'Surface blockers or ambiguities in the guestbook.',
-          ],
+          etiquette: (() => {
+            const defaults = [
+              'Keep the Harada structure (goal → sub-goal → 8 actions) intact.',
+              'Use positive, coaching language when writing updates.',
+              'Ask before deleting goals or sub-goals.',
+              'Surface blockers or ambiguities in the guestbook.',
+            ];
+            if (!userId) return defaults;
+            let rules = db
+              .prepare('SELECT * FROM agent_etiquette WHERE user_id = ? ORDER BY position')
+              .all(userId) as AgentEtiquette[];
+            if (rules.length === 0) {
+              // Seed defaults for this user
+              const insert = db.prepare(
+                'INSERT INTO agent_etiquette (id, user_id, content, position, is_default) VALUES (?, ?, ?, ?, 1)'
+              );
+              defaults.forEach((content, i) => {
+                insert.run(crypto.randomUUID(), userId, content, i);
+              });
+              return defaults;
+            }
+            return rules.map(r => r.content);
+          })(),
         },
         api: {
           baseUrl: process.env.FRONTEND_URL || req.protocol + '://' + req.get('host'),

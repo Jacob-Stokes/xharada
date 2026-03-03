@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { api, API_URL } from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
+import Guestbook from '../components/Guestbook';
+import { useDisplaySettings } from '../context/DisplaySettingsContext';
 
 interface Goal {
   id: string;
@@ -23,6 +25,8 @@ export default function Home() {
   const [agentKeyNotice, setAgentKeyNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [allowQueryParamAuth, setAllowQueryParamAuth] = useState(true);
   const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { settings: displaySettings } = useDisplaySettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -141,6 +145,14 @@ export default function Home() {
     }
   };
 
+  const perPage = displaySettings.goalsPerPage;
+  const totalPages = Math.max(1, Math.ceil(goals.length / perPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedGoals = useMemo(
+    () => goals.slice((safePage - 1) * perPage, safePage * perPage),
+    [goals, safePage, perPage]
+  );
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
@@ -218,42 +230,85 @@ export default function Home() {
           ) : goals.length === 0 ? (
             <p className="text-gray-500">No goals yet. Create your first goal above!</p>
           ) : (
-            <div className="grid gap-4">
-              {goals.map((goal) => (
-                <div
-                  key={goal.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900">{goal.title}</h3>
-                      {goal.description && (
-                        <p className="text-gray-600 mt-1">{goal.description}</p>
-                      )}
-                      <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                        <span className="capitalize">Status: {goal.status}</span>
-                        <span>Created: {new Date(goal.created_at).toLocaleDateString()}</span>
+            <>
+              <div className="grid gap-4">
+                {paginatedGoals.map((goal) => (
+                  <div
+                    key={goal.id}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold text-gray-900">{goal.title}</h3>
+                        {goal.description && (
+                          <p className="text-gray-600 mt-1">{goal.description}</p>
+                        )}
+                        <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                          <span className="capitalize">Status: {goal.status}</span>
+                          <span>Created: {new Date(goal.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/goal/${goal.id}`}
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
+                        >
+                          View Grid
+                        </Link>
+                        <button
+                          onClick={() => setConfirmDeleteGoalId(goal.id)}
+                          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Link
-                        to={`/goal/${goal.id}`}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
-                      >
-                        View Grid
-                      </Link>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <p className="text-sm text-gray-500">
+                    Showing {(safePage - 1) * perPage + 1}–{Math.min(safePage * perPage, goals.length)} of {goals.length} goals
+                  </p>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={safePage === 1}
+                      className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Prev
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
-                        onClick={() => setConfirmDeleteGoalId(goal.id)}
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 text-sm border rounded ${
+                          page === safePage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'
+                        }`}
                       >
-                        Delete
+                        {page}
                       </button>
-                    </div>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={safePage === totalPages}
+                      className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
+        </div>
+
+        {/* Guestbook */}
+        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+          <Guestbook targetType="user" />
         </div>
       </div>
 

@@ -121,6 +121,19 @@ CREATE TABLE IF NOT EXISTS shared_goals (
 CREATE INDEX IF NOT EXISTS idx_shared_goals_token ON shared_goals(token);
 CREATE INDEX IF NOT EXISTS idx_shared_goals_goal ON shared_goals(goal_id);
 
+-- Custom agent etiquette rules per user
+CREATE TABLE IF NOT EXISTS agent_etiquette (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  is_default INTEGER DEFAULT 0 CHECK(is_default IN (0, 1)),
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_etiquette_user ON agent_etiquette(user_id);
+
 -- Indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_sub_goals_primary_goal ON sub_goals(primary_goal_id);
 CREATE INDEX IF NOT EXISTS idx_action_items_sub_goal ON action_items(sub_goal_id);
@@ -170,6 +183,28 @@ export function initDatabase() {
     }
   } catch (err) {
     console.log('Migration check (allow_query_param_auth):', err);
+  }
+
+  // Migration: Seed default agent etiquette for existing users
+  try {
+    const users = db.prepare('SELECT id FROM users').all() as any[];
+    for (const user of users) {
+      const existing = db.prepare('SELECT COUNT(*) as count FROM agent_etiquette WHERE user_id = ?').get(user.id) as any;
+      if (existing.count === 0) {
+        const defaults = [
+          'Keep the Harada structure (goal → sub-goal → 8 actions) intact.',
+          'Use positive, coaching language when writing updates.',
+          'Ask before deleting goals or sub-goals.',
+          'Surface blockers or ambiguities in the guestbook.',
+        ];
+        const insert = db.prepare('INSERT INTO agent_etiquette (id, user_id, content, position, is_default) VALUES (?, ?, ?, ?, 1)');
+        defaults.forEach((content, i) => {
+          insert.run(crypto.randomUUID(), user.id, content, i);
+        });
+      }
+    }
+  } catch (err) {
+    console.log('Migration check (agent_etiquette seed):', err);
   }
 
   console.log('Database initialized at:', DB_PATH);
@@ -235,6 +270,15 @@ export interface SharedGoal {
   show_logs: number;
   show_guestbook: number;
   is_active: number;
+  created_at: string;
+}
+
+export interface AgentEtiquette {
+  id: string;
+  user_id: string;
+  content: string;
+  position: number;
+  is_default: number;
   created_at: string;
 }
 

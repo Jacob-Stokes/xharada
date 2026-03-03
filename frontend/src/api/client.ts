@@ -131,6 +131,23 @@ export const api = {
   },
   deleteShareLink: (shareId: string) =>
     apiRequest<any>(`/api/share/${shareId}`, { method: 'DELETE' }),
+  // Etiquette
+  getEtiquette: () => apiRequest<any[]>('/api/etiquette'),
+  createEtiquette: (content: string) => apiRequest<any>('/api/etiquette', {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  }),
+  updateEtiquette: (id: string, content: string) => apiRequest<any>(`/api/etiquette/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ content }),
+  }),
+  deleteEtiquette: (id: string) => apiRequest<any>(`/api/etiquette/${id}`, {
+    method: 'DELETE',
+  }),
+  resetEtiquette: () => apiRequest<any[]>('/api/etiquette/reset', {
+    method: 'POST',
+  }),
+
   getSharedGoal: async (token: string) => {
     const response = await fetch(`${API_URL}/api/shared/${token}/goal`);
     const parsed = await response.json();

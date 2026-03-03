@@ -274,6 +274,9 @@ describe('Database Schema', () => {
       expect(indexNames).toContain('idx_guestbook_user');
       expect(indexNames).toContain('idx_guestbook_target');
       expect(indexNames).toContain('idx_primary_goals_user');
+      expect(indexNames).toContain('idx_shared_goals_token');
+      expect(indexNames).toContain('idx_shared_goals_goal');
+      expect(indexNames).toContain('idx_agent_etiquette_user');
     });
   });
 });

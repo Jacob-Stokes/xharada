@@ -1,8 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Guestbook from '../components/Guestbook';
 import ConfirmModal from '../components/ConfirmModal';
-import { API_URL } from '../api/client';
+import { API_URL, api } from '../api/client';
 import { useDisplaySettings, paletteOptions, PaletteName } from '../context/DisplaySettingsContext';
 import { lightenColor } from '../utils/color';
 
@@ -32,7 +31,7 @@ export default function Settings() {
   const [confirmDeleteKeyId, setConfirmDeleteKeyId] = useState<{ id: string; name: string } | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
   const [allowQueryParamAuth, setAllowQueryParamAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'keys' | 'docs' | 'guestbook' | 'display' | 'data'>('keys');
+  const [activeTab, setActiveTab] = useState<'keys' | 'docs' | 'display' | 'data' | 'etiquette'>('keys');
   const [goalSummaries, setGoalSummaries] = useState<GoalSummary[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [exportMode, setExportMode] = useState<'all' | 'selected'>('all');
@@ -40,6 +39,12 @@ export default function Settings() {
   const [exportingGoals, setExportingGoals] = useState(false);
   const [importingGoals, setImportingGoals] = useState(false);
   const [dataNotice, setDataNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [etiquetteRules, setEtiquetteRules] = useState<{ id: string; content: string; is_default: number }[]>([]);
+  const [etiquetteLoading, setEtiquetteLoading] = useState(false);
+  const [newEtiquetteContent, setNewEtiquetteContent] = useState('');
+  const [editingEtiquetteId, setEditingEtiquetteId] = useState<string | null>(null);
+  const [editingEtiquetteContent, setEditingEtiquetteContent] = useState('');
+  const [confirmResetEtiquette, setConfirmResetEtiquette] = useState(false);
   const {
     settings: displaySettings,
     updateSettings: updateDisplaySettings,
@@ -71,6 +76,9 @@ export default function Settings() {
   useEffect(() => {
     if (activeTab === 'data' && goalSummaries.length === 0 && !goalsLoading) {
       fetchGoalSummaries();
+    }
+    if (activeTab === 'etiquette' && etiquetteRules.length === 0 && !etiquetteLoading) {
+      loadEtiquette();
     }
   }, [activeTab]);
 
@@ -143,6 +151,60 @@ export default function Settings() {
       setDataNotice({ type: 'error', message: (err as Error).message });
     } finally {
       setGoalsLoading(false);
+    }
+  };
+
+  const loadEtiquette = async () => {
+    try {
+      setEtiquetteLoading(true);
+      const rules = await api.getEtiquette();
+      setEtiquetteRules(rules);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setEtiquetteLoading(false);
+    }
+  };
+
+  const handleAddEtiquette = async () => {
+    if (!newEtiquetteContent.trim()) return;
+    try {
+      const rule = await api.createEtiquette(newEtiquetteContent);
+      setEtiquetteRules(prev => [...prev, rule]);
+      setNewEtiquetteContent('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleUpdateEtiquette = async (id: string) => {
+    if (!editingEtiquetteContent.trim()) return;
+    try {
+      const updated = await api.updateEtiquette(id, editingEtiquetteContent);
+      setEtiquetteRules(prev => prev.map(r => r.id === id ? updated : r));
+      setEditingEtiquetteId(null);
+      setEditingEtiquetteContent('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleDeleteEtiquette = async (id: string) => {
+    try {
+      await api.deleteEtiquette(id);
+      setEtiquetteRules(prev => prev.filter(r => r.id !== id));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleResetEtiquette = async () => {
+    try {
+      const rules = await api.resetEtiquette();
+      setEtiquetteRules(rules);
+      setConfirmResetEtiquette(false);
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 
@@ -345,16 +407,6 @@ export default function Settings() {
             API Documentation
           </button>
           <button
-            onClick={() => setActiveTab('guestbook')}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              activeTab === 'guestbook'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Guestbook
-          </button>
-          <button
             onClick={() => setActiveTab('display')}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               activeTab === 'display'
@@ -373,6 +425,16 @@ export default function Settings() {
             }`}
           >
             Data Import/Export
+          </button>
+          <button
+            onClick={() => setActiveTab('etiquette')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'etiquette'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            Agent Etiquette
           </button>
         </div>
 
@@ -667,6 +729,29 @@ curl -X POST "$API_URL/api/guestbook" \\
                         ? 'Grid summary tiles with action list.'
                         : 'Full 9×9 Harada board with inline editing.'}
                     </p>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Goals Per Page */}
+            <section>
+              <h3 className="text-lg font-semibold mb-2">Goals Per Page</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Number of goals shown per page on the home screen.
+              </p>
+              <div className="flex items-center gap-3">
+                {[3, 5, 10, 25].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => updateDisplaySettings({ goalsPerPage: n })}
+                    className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                      displaySettings.goalsPerPage === n
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    {n}
                   </button>
                 ))}
               </div>
@@ -986,9 +1071,102 @@ curl -X POST "$API_URL/api/guestbook" \\
           </div>
         )}
 
-        {activeTab === 'guestbook' && (
+        {activeTab === 'etiquette' && (
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <Guestbook targetType="user" />
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Agent Etiquette Rules</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Customize the etiquette guidelines shown to AI agents on the landing page.
+                </p>
+              </div>
+              <button
+                onClick={() => setConfirmResetEtiquette(true)}
+                className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+              >
+                Reset to Defaults
+              </button>
+            </div>
+
+            {etiquetteLoading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : (
+              <div className="space-y-2">
+                {etiquetteRules.map((rule) => (
+                  <div key={rule.id} className="flex items-start gap-2 group">
+                    {editingEtiquetteId === rule.id ? (
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="text"
+                          value={editingEtiquetteContent}
+                          onChange={(e) => setEditingEtiquetteContent(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleUpdateEtiquette(rule.id);
+                            if (e.key === 'Escape') { setEditingEtiquetteId(null); setEditingEtiquetteContent(''); }
+                          }}
+                          className="flex-1 px-3 py-2 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleUpdateEtiquette(rule.id)}
+                          className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => { setEditingEtiquetteId(null); setEditingEtiquetteContent(''); }}
+                          className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1 px-3 py-2 bg-gray-50 rounded text-sm text-gray-700 border border-gray-200">
+                          {rule.content}
+                          {rule.is_default ? (
+                            <span className="ml-2 text-xs text-gray-400">(default)</span>
+                          ) : null}
+                        </div>
+                        <button
+                          onClick={() => { setEditingEtiquetteId(rule.id); setEditingEtiquetteContent(rule.content); }}
+                          className="px-2 py-2 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                          title="Edit"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEtiquette(rule.id)}
+                          className="px-2 py-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                          title="Remove"
+                        >
+                          Remove
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {/* Add new rule */}
+                <div className="flex gap-2 pt-3 border-t mt-3">
+                  <input
+                    type="text"
+                    value={newEtiquetteContent}
+                    onChange={(e) => setNewEtiquetteContent(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddEtiquette(); }}
+                    placeholder="Add a new etiquette rule..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <button
+                    onClick={handleAddEtiquette}
+                    disabled={!newEtiquetteContent.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1102,6 +1280,17 @@ curl -X POST "$API_URL/api/guestbook" \\
             </div>
           </div>
         </div>
+      )}
+
+      {confirmResetEtiquette && (
+        <ConfirmModal
+          title="Reset Etiquette Rules"
+          message="This will remove all custom rules and restore the defaults. Continue?"
+          confirmLabel="Reset"
+          confirmClassName="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+          onConfirm={handleResetEtiquette}
+          onCancel={() => setConfirmResetEtiquette(false)}
+        />
       )}
 
       {confirmDeleteKeyId && (

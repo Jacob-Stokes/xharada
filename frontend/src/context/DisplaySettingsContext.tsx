@@ -13,6 +13,7 @@ export interface DisplaySettings {
   actionShadePercent: number;
   centerLayout: CenterLayout;
   centerBackdrop: CenterBackdrop;
+  goalsPerPage: number;
 }
 
 export const paletteOptions: Record<PaletteName, { label: string; colors: string[] }> = {
@@ -44,6 +45,7 @@ const defaultSettings: DisplaySettings = {
   actionShadePercent: 60,
   centerLayout: 'single',
   centerBackdrop: 'card',
+  goalsPerPage: 5,
 };
 
 interface DisplaySettingsContextValue {
