@@ -7,6 +7,9 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Use relative /api paths so nginx proxies to the backend
+ENV VITE_API_URL=""
 RUN npm run build
 
 # Stage 2: Serve with nginx
