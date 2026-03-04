@@ -72,7 +72,17 @@
     "failedCreateApiKey": "APIキーの作成に失敗しました",
     "newApiKeyGenerated": "新しいAPIキーが生成されました。安全にコピーして保管してください。",
     "deleteGoalTitle": "目標を削除",
-    "deleteGoalMessage": "この目標を削除しますか？この操作は元に戻せません。"
+    "deleteGoalMessage": "この目標を削除しますか？この操作は元に戻せません。",
+    "markComplete": "完了",
+    "archive": "アーカイブ",
+    "reactivate": "再開",
+    "status_active": "アクティブ",
+    "status_completed": "完了",
+    "status_archived": "アーカイブ済み",
+    "filter_active": "アクティブ",
+    "filter_completed": "完了",
+    "filter_archived": "アーカイブ",
+    "filter_all": "すべて"
   },
 
   "goalGrid": {
@@ -142,7 +152,12 @@
     "addActionButton": "＋ アクション追加",
     "deleteActionTitle": "アクションを削除",
     "deleteActionMessage": "アクション「{{title}}」を削除しますか？この操作は元に戻せません。",
-    "addSubGoalGrid": "サブ目標{{position}}を追加"
+    "addSubGoalGrid": "サブ目標{{position}}を追加",
+    "markComplete": "完了",
+    "archive": "アーカイブ",
+    "reactivate": "再開",
+    "status_completed": "この目標は完了しています",
+    "status_archived": "この目標はアーカイブされています"
   },
 
   "agents": {
@@ -324,7 +339,25 @@
     "guestbookPerPageDesc": "ページあたりのAIエージェントゲストブックエントリの表示件数。",
 
     "language": "言語",
-    "languageDesc": "希望する表示言語を選択してください。"
+    "languageDesc": "希望する表示言語を選択してください。",
+
+    "tabAccount": "アカウント",
+    "darkMode": "ダークモード",
+    "darkModeDesc": "ライトテーマとダークテーマを切り替えます。",
+    "enableDarkMode": "ダークモードを有効にする"
+  },
+
+  "account": {
+    "tabAccount": "アカウント",
+    "changePassword": "パスワードを変更",
+    "changePasswordDesc": "アカウントのパスワードを更新します。確認のため現在のパスワードを入力してください。",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "新しいパスワードを確認",
+    "changePasswordButton": "パスワードを変更",
+    "passwordChanged": "パスワードが正常に変更されました。",
+    "passwordsDoNotMatch": "新しいパスワードが一致しません。",
+    "passwordMinLength": "パスワードは6文字以上である必要があります。"
   },
 
   "share": {

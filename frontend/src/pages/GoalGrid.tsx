@@ -420,7 +420,7 @@ export default function GoalGrid() {
           className="bg-yellow-50 border-2 border-dashed border-yellow-400 p-4 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors flex flex-col items-center justify-center h-full min-h-[120px]"
         >
           <div className="text-3xl text-yellow-600 mb-2">+</div>
-          <div className="text-sm text-gray-600">{t('goalGrid.addSubGoalGrid', { position })}</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{t('goalGrid.addSubGoalGrid', { position })}</div>
         </div>
       );
     }
@@ -467,15 +467,15 @@ export default function GoalGrid() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-500">{t('goalGrid.loadingGoal')}</p>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-500 dark:text-gray-400">{t('goalGrid.loadingGoal')}</p>
       </div>
     );
   }
 
   if (error || !goal) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || t('goalGrid.goalNotFound')}</p>
           <Link to="/" className="text-blue-600 hover:underline">{t('goalGrid.goBackHome')}</Link>
@@ -485,7 +485,7 @@ export default function GoalGrid() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8">
       {/* Header - always constrained */}
       <div className="container mx-auto px-4 md:px-6 max-w-6xl mb-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -494,7 +494,7 @@ export default function GoalGrid() {
               <Link to="/" className="text-blue-600 hover:underline inline-flex items-center gap-1">
                 {t('goalGrid.backToGoals')}
               </Link>
-              <span className="text-gray-400">•</span>
+              <span className="text-gray-400 dark:text-gray-500">•</span>
               <Link
                 to="/settings"
                 state={{ from: location.pathname }}
@@ -504,7 +504,7 @@ export default function GoalGrid() {
               </Link>
             </div>
             <h1
-              className="text-3xl font-bold text-gray-900 cursor-pointer hover:text-blue-600"
+              className="text-3xl font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600"
               onContextMenu={(e) => {
                 e.preventDefault();
                 startRenameGoal();
@@ -513,18 +513,35 @@ export default function GoalGrid() {
             >
               {goal.title}
             </h1>
-            {goal.description && <p className="text-gray-600 mt-1">{goal.description}</p>}
+            {goal.description && <p className="text-gray-600 dark:text-gray-400 mt-1">{goal.description}</p>}
+            {/* Status controls */}
+            <div className="flex items-center gap-2 mt-2">
+              {goal.status === 'active' ? (
+                <>
+                  <button onClick={async () => { await api.updateGoal(goal.id, { status: 'completed' }); loadGoal(); }}
+                    className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600">{t('goalGrid.markComplete')}</button>
+                  <button onClick={async () => { await api.updateGoal(goal.id, { status: 'archived' }); loadGoal(); }}
+                    className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">{t('goalGrid.archive')}</button>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm text-gray-500 dark:text-gray-400 italic">{t(`goalGrid.status_${goal.status}`)}</span>
+                  <button onClick={async () => { await api.updateGoal(goal.id, { status: 'active' }); loadGoal(); }}
+                    className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">{t('goalGrid.reactivate')}</button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {/* View Mode Toggle */}
-            <div className="flex flex-wrap gap-2 bg-white rounded-lg shadow p-1">
+            <div className="flex flex-wrap gap-2 bg-white dark:bg-gray-800 rounded-lg shadow p-1">
               <button
                 onClick={() => setViewMode('compact')}
                 className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                   viewMode === 'compact'
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 {t('goalGrid.compactView')}
@@ -534,7 +551,7 @@ export default function GoalGrid() {
                 className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                   viewMode === 'full'
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 {t('goalGrid.fullGrid')}
@@ -543,13 +560,13 @@ export default function GoalGrid() {
 
             {/* Aspect Ratio Toggle (only show in full mode) */}
             {viewMode === 'full' && (
-              <div className="flex flex-wrap gap-2 bg-white rounded-lg shadow p-1">
+              <div className="flex flex-wrap gap-2 bg-white dark:bg-gray-800 rounded-lg shadow p-1">
                 <button
                   onClick={() => setGridAspect('square')}
                   className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                     gridAspect === 'square'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('goalGrid.square')}
@@ -559,7 +576,7 @@ export default function GoalGrid() {
                   className={`flex-1 sm:flex-none px-4 py-2 rounded transition-colors text-sm ${
                     gridAspect === 'rectangle'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('goalGrid.rectangle')}
@@ -570,14 +587,14 @@ export default function GoalGrid() {
             <button
               type="button"
               onClick={() => setShowShareModal(true)}
-              className="print-hidden px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 transition-colors bg-white shadow"
+              className="print-hidden px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800 shadow"
             >
               {t('goalGrid.shareGoal')}
             </button>
             <button
               type="button"
               onClick={handlePrintGrid}
-              className="print-hidden px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 transition-colors bg-white shadow"
+              className="print-hidden px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800 shadow"
             >
               {t('goalGrid.printGrid')}
             </button>
@@ -585,7 +602,7 @@ export default function GoalGrid() {
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4">
+          <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded mt-4">
             {error}
           </div>
         )}
@@ -625,13 +642,13 @@ export default function GoalGrid() {
             </div>
 
             {/* Guestbook for this goal in full view */}
-            <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
+            <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <Guestbook targetType="goal" targetId={goal.id} />
             </div>
           </>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 md:p-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Top row - positions 1, 2, 3 */}
                 {renderSubGoalCard(1)}
@@ -655,13 +672,13 @@ export default function GoalGrid() {
                 {renderSubGoalCard(5)}
               </div>
 
-              <div className="mt-6 text-center text-sm text-gray-500">
+              <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
                 <p>{t('goalGrid.clickYellowCells')}</p>
               </div>
             </div>
 
             {/* Action Items List for Compact View */}
-            <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
+            <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <h3 className="text-lg font-semibold mb-4">{t('goalGrid.allActions')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {goal.subGoals.map((sg) => (
@@ -670,9 +687,9 @@ export default function GoalGrid() {
                     ref={(el) => {
                       actionSectionRefs.current[sg.id] = el;
                     }}
-                    className="border rounded-lg p-3 bg-gray-50 scroll-mt-24"
+                    className="border dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-700 scroll-mt-24"
                   >
-                    <div className="flex items-center justify-between gap-3 text-xs font-semibold text-gray-600 mb-2">
+                    <div className="flex items-center justify-between gap-3 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
                       <span>{sg.title}</span>
                       <button
                         type="button"
@@ -683,7 +700,7 @@ export default function GoalGrid() {
                       </button>
                     </div>
                     {sg.actions.length === 0 ? (
-                      <div className="text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded p-3">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600 rounded p-3">
                         {t('goalGrid.noActions')}
                       </div>
                     ) : (
@@ -692,10 +709,10 @@ export default function GoalGrid() {
                           <div
                             key={action.id}
                             onClick={() => handleActionClick(action)}
-                            className="bg-white border border-gray-300 rounded p-2 cursor-pointer hover:shadow-md transition-shadow"
+                            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded p-2 cursor-pointer hover:shadow-md transition-shadow"
                           >
                             <div className="text-sm font-medium">{action.title}</div>
-                            <div className="text-xs text-gray-500 mt-1">{t('goalGrid.clickToLogActivity')}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('goalGrid.clickToLogActivity')}</div>
                           </div>
                         ))}
                       </div>
@@ -729,7 +746,7 @@ export default function GoalGrid() {
             </div>
 
             {/* Guestbook for this goal */}
-            <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
+            <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
               <Guestbook targetType="goal" targetId={goal.id} />
             </div>
           </>
@@ -741,11 +758,11 @@ export default function GoalGrid() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <form
             onSubmit={handleTextModalSubmit}
-            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
           >
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">{getTextModalHeading()}</h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{getTextModalHeading()}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {textModal.mode === 'add-subgoal' &&
                   t('goalGrid.addSubGoalPrompt')}
                 {textModal.mode === 'add-action' &&
@@ -759,7 +776,7 @@ export default function GoalGrid() {
               type="text"
               value={textModalValue}
               onChange={(e) => setTextModalValue(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
               autoFocus
             />
             {textModalError && (
@@ -772,7 +789,7 @@ export default function GoalGrid() {
                   setTextModal(null);
                   setTextModalError(null);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 {t('common.cancel')}
               </button>
@@ -793,16 +810,16 @@ export default function GoalGrid() {
       {/* Activity Log Modal */}
       {showLogModal && selectedAction && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b sticky top-0 bg-white">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedAction.title}</h2>
-                  <p className="text-sm text-gray-600 mt-1">{t('goalGrid.activityLog')}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedAction.title}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('goalGrid.activityLog')}</p>
                 </div>
                 <button
                   onClick={() => setShowLogModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
                 >
                   ×
                 </button>
@@ -810,7 +827,7 @@ export default function GoalGrid() {
             </div>
 
             {/* Add Log Form */}
-            <div className="p-6 border-b bg-gray-50">
+            <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
               <h3 className="font-semibold mb-3">{t('goalGrid.logNewActivity')}</h3>
               <form onSubmit={handleAddLog} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -819,7 +836,7 @@ export default function GoalGrid() {
                     <select
                       value={logForm.log_type}
                       onChange={(e) => setLogForm({...logForm, log_type: e.target.value})}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                     >
                       <option value="note">{t('goalGrid.logTypeNote')}</option>
                       <option value="progress">{t('goalGrid.logTypeProgress')}</option>
@@ -833,7 +850,7 @@ export default function GoalGrid() {
                       type="date"
                       value={logForm.log_date}
                       onChange={(e) => setLogForm({...logForm, log_date: e.target.value})}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                     />
                   </div>
                 </div>
@@ -844,7 +861,7 @@ export default function GoalGrid() {
                     value={logForm.content}
                     onChange={(e) => setLogForm({...logForm, content: e.target.value})}
                     placeholder={t('goalGrid.logNotePlaceholder')}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                     rows={2}
                     required
                   />
@@ -860,7 +877,7 @@ export default function GoalGrid() {
                         value={logForm.metric_value}
                         onChange={(e) => setLogForm({...logForm, metric_value: e.target.value})}
                         placeholder={t('goalGrid.metricValuePlaceholder')}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                       />
                     </div>
                     <div>
@@ -870,7 +887,7 @@ export default function GoalGrid() {
                         value={logForm.metric_unit}
                         onChange={(e) => setLogForm({...logForm, metric_unit: e.target.value})}
                         placeholder={t('goalGrid.metricUnitPlaceholder')}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                       />
                     </div>
                   </div>
@@ -881,7 +898,7 @@ export default function GoalGrid() {
                   <select
                     value={logForm.mood}
                     onChange={(e) => setLogForm({...logForm, mood: e.target.value})}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
                   >
                     <option value="">{t('goalGrid.moodSelect')}</option>
                     <option value="motivated">{t('goalGrid.moodMotivated')}</option>
@@ -905,13 +922,13 @@ export default function GoalGrid() {
             <div className="p-6">
               <h3 className="font-semibold mb-4">{t('goalGrid.activityHistory', { count: actionLogs.length })}</h3>
               {actionLogs.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">{t('goalGrid.noActivityLogged')}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('goalGrid.noActivityLogged')}</p>
               ) : (
                 <div className="space-y-3">
                   {actionLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
@@ -924,11 +941,11 @@ export default function GoalGrid() {
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-gray-500">{log.log_date}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{log.log_date}</span>
                       </div>
-                      <p className="text-sm text-gray-900 mb-1">{log.content}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mb-1">{log.content}</p>
                       {log.metric_value && (
-                        <div className="text-sm font-medium text-green-700">
+                        <div className="text-sm font-medium text-green-700 dark:text-green-400">
                           {log.metric_value} {log.metric_unit}
                         </div>
                       )}
@@ -939,11 +956,11 @@ export default function GoalGrid() {
             </div>
 
             {/* Guestbook for this action */}
-            <div className="p-6 border-t">
+            <div className="p-6 border-t dark:border-gray-700">
               <Guestbook targetType="action" targetId={selectedAction.id} />
             </div>
 
-            <div className="p-6 border-t bg-gray-50">
+            <div className="p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
               <button
                 onClick={() => setShowLogModal(false)}
                 className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
@@ -958,16 +975,16 @@ export default function GoalGrid() {
       {/* Description Editor Modal */}
       {showDescriptionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b sticky top-0 bg-white">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{t('goalGrid.editGoalDescription')}</h2>
-                  <p className="text-sm text-gray-600 mt-1">{t('goalGrid.useMarkdownFormatting')}</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('goalGrid.editGoalDescription')}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('goalGrid.useMarkdownFormatting')}</p>
                 </div>
                 <button
                   onClick={() => setShowDescriptionModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
                 >
                   ×
                 </button>
@@ -983,14 +1000,14 @@ export default function GoalGrid() {
                     value={descriptionForm}
                     onChange={(e) => setDescriptionForm(e.target.value)}
                     placeholder={t('goalGrid.markdownPlaceholder')}
-                    className="w-full h-96 px-4 py-3 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-96 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
 
                 {/* Preview */}
                 <div>
                   <label className="block text-sm font-semibold mb-2">{t('common.preview')}</label>
-                  <div className="w-full h-96 px-4 py-3 border border-gray-300 rounded-lg overflow-y-auto bg-gray-50">
+                  <div className="w-full h-96 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg overflow-y-auto bg-gray-50 dark:bg-gray-700">
                     {descriptionForm.trim() ? (
                       <div className="prose prose-sm max-w-none">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -998,14 +1015,14 @@ export default function GoalGrid() {
                         </ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="text-gray-400 italic">{t('goalGrid.previewWillAppear')}</p>
+                      <p className="text-gray-400 dark:text-gray-500 italic">{t('goalGrid.previewWillAppear')}</p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t bg-gray-50 flex gap-3">
+            <div className="p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex gap-3">
               <button
                 onClick={() => setShowDescriptionModal(false)}
                 className="flex-1 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -1026,22 +1043,22 @@ export default function GoalGrid() {
       {/* Sub-Goal Detail Modal */}
       {showSubGoalModal && selectedSubGoal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b sticky top-0 bg-white">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
               <div className="flex justify-between items-start">
                 <div>
                   <h2
-                    className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                    className="text-2xl font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-blue-600 transition-colors"
                     onClick={() => handleUpdateSubGoal(selectedSubGoal)}
                     title={t('goalGrid.clickToRename')}
                   >
                     {selectedSubGoal.title}
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1">{t('goalGrid.manageActions')}<span className="text-blue-500 cursor-pointer hover:underline" onClick={() => handleUpdateSubGoal(selectedSubGoal)}>{t('common.rename')}</span></p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('goalGrid.manageActions')}<span className="text-blue-500 cursor-pointer hover:underline" onClick={() => handleUpdateSubGoal(selectedSubGoal)}>{t('common.rename')}</span></p>
                 </div>
                 <button
                   onClick={() => setShowSubGoalModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
                 >
                   ×
                 </button>
@@ -1059,11 +1076,11 @@ export default function GoalGrid() {
                     return (
                       <div
                         key={position}
-                        className="border border-gray-300 rounded-lg p-3 bg-white hover:shadow-md transition-shadow"
+                        className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1">
-                            <span className="text-sm font-semibold text-gray-500 w-6">#{position}</span>
+                            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 w-6">#{position}</span>
                             <div
                               className="flex-1 cursor-pointer hover:text-blue-600"
                               onClick={() => handleActionClick(action)}
@@ -1094,11 +1111,11 @@ export default function GoalGrid() {
                     <div
                       key={position}
                       onClick={() => handleAddAction(selectedSubGoal.id, position)}
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold text-gray-400 w-6">#{position}</span>
-                        <span className="text-gray-500 text-sm">{t('goalGrid.addActionButton')}</span>
+                        <span className="text-sm font-semibold text-gray-400 dark:text-gray-500 w-6">#{position}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-sm">{t('goalGrid.addActionButton')}</span>
                       </div>
                     </div>
                   );
@@ -1107,11 +1124,11 @@ export default function GoalGrid() {
             </div>
 
             {/* Guestbook for this sub-goal */}
-            <div className="p-6 border-t">
+            <div className="p-6 border-t dark:border-gray-700">
               <Guestbook targetType="subgoal" targetId={selectedSubGoal.id} />
             </div>
 
-            <div className="p-6 border-t bg-gray-50">
+            <div className="p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
               <button
                 onClick={() => setShowSubGoalModal(false)}
                 className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"

@@ -16,6 +16,7 @@ export interface DisplaySettings {
   goalsPerPage: number;
   guestbookPerPage: number;
   language: string;
+  darkMode: boolean;
 }
 
 export const paletteOptions: Record<PaletteName, { label: string; colors: string[] }> = {
@@ -50,6 +51,7 @@ const defaultSettings: DisplaySettings = {
   goalsPerPage: 5,
   guestbookPerPage: 5,
   language: 'en-US',
+  darkMode: false,
 };
 
 interface DisplaySettingsContextValue {
@@ -81,6 +83,14 @@ export function DisplaySettingsProvider({ children }: { children: React.ReactNod
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
+
+  useEffect(() => {
+    if (settings.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [settings.darkMode]);
 
   const updateSettings = (changes: Partial<DisplaySettings>) => {
     setSettings((prev) => ({ ...prev, ...changes }));

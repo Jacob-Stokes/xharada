@@ -275,4 +275,48 @@ router.put('/settings', requireAuth, (req, res) => {
   }
 });
 
+// Change password (authenticated user)
+router.put('/password', requireAuth, (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 6 characters'
+      });
+    }
+
+    const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user!.id) as any;
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (!bcrypt.compareSync(currentPassword, user.password_hash)) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect'
+      });
+    }
+
+    const newHash = bcrypt.hashSync(newPassword, 10);
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?")
+      .run(newHash, req.user!.id);
+
+    res.json({
+      success: true,
+      data: { message: 'Password changed successfully' }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

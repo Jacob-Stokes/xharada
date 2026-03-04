@@ -92,14 +92,14 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <p className="text-gray-500">{t('guestbook.loadingGuestbook')}</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('guestbook.loadingGuestbook')}</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded">
         {error}
       </div>
     );
@@ -122,8 +122,8 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
       </div>
 
       {entries.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-gray-500 mb-2">{t('guestbook.noComments')}</p>
+        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+          <p className="text-gray-500 dark:text-gray-400 mb-2">{t('guestbook.noComments')}</p>
           <p className="text-sm text-gray-400">
             {t('guestbook.noCommentsDesc')}
           </p>
@@ -134,14 +134,14 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
             {paginatedEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{getTargetIcon(entry.target_type)}</span>
                     <div>
-                      <div className="font-semibold text-gray-900">{entry.agent_name}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="font-semibold text-gray-900 dark:text-gray-100">{entry.agent_name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {getTargetLabel(entry.target_type)}
                         {entry.target_id && (
                           <span className="ml-1">&middot; {t('guestbook.idPrefix')}{entry.target_id.substring(0, 8)}...</span>
@@ -149,12 +149,12 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-400 dark:text-gray-400">
                     {new Date(entry.created_at).toLocaleDateString()}
                   </div>
                 </div>
 
-                <div className="prose prose-sm max-w-none text-gray-700">
+                <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300">
                   <ReactMarkdown>{entry.comment}</ReactMarkdown>
                 </div>
               </div>
@@ -164,7 +164,7 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {t('guestbook.showingRange', {
                   start: (safePage - 1) * perPage + 1,
                   end: Math.min(safePage * perPage, entries.length),
@@ -175,7 +175,7 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={safePage === 1}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {t('home.prev')}
                 </button>
@@ -184,7 +184,7 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
                     key={page}
                     onClick={() => setCurrentPage(page)}
                     className={`px-3 py-1 text-sm border rounded ${
-                      page === safePage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'
+                      page === safePage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     {page}
@@ -193,7 +193,7 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={safePage === totalPages}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {t('home.next')}
                 </button>
@@ -204,7 +204,7 @@ export default function Guestbook({ targetType, targetId, preloadedEntries, read
       )}
 
       {!readOnly && (
-        <div className="text-xs text-gray-500 text-center pt-4 border-t">
+        <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 border-t">
           {t('guestbook.apiHint')}
         </div>
       )}

@@ -40,11 +40,37 @@ function getGoalTree(goalId: string, userId?: string | null) {
   };
 }
 
-// Get all primary goals
+// Get all primary goals (with optional search via ?q=)
 router.get('/', (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const goals = db.prepare('SELECT * FROM primary_goals WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+    const q = (req.query.q as string || '').trim();
+
+    let goals;
+    if (q) {
+      const likeTerm = `%${q}%`;
+      goals = db.prepare(`
+        SELECT DISTINCT pg.* FROM primary_goals pg
+        WHERE pg.user_id = ? AND (
+          pg.title LIKE ? OR pg.description LIKE ?
+          OR pg.id IN (
+            SELECT sg.primary_goal_id FROM sub_goals sg
+            WHERE sg.primary_goal_id IN (SELECT id FROM primary_goals WHERE user_id = ?)
+              AND sg.title LIKE ?
+          )
+          OR pg.id IN (
+            SELECT sg2.primary_goal_id FROM action_items ai
+            JOIN sub_goals sg2 ON ai.sub_goal_id = sg2.id
+            WHERE sg2.primary_goal_id IN (SELECT id FROM primary_goals WHERE user_id = ?)
+              AND ai.title LIKE ?
+          )
+        )
+        ORDER BY pg.created_at DESC
+      `).all(userId, likeTerm, likeTerm, userId, likeTerm, userId, likeTerm);
+    } else {
+      goals = db.prepare('SELECT * FROM primary_goals WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+    }
+
     res.json({ success: true, data: goals, error: null });
   } catch (error) {
     res.status(500).json({ success: false, data: null, error: (error as Error).message });
@@ -362,19 +388,22 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
-// Update primary goal
+// Update primary goal (supports partial updates)
 router.put('/:goalId', (req: Request, res: Response) => {
   try {
     const { goalId } = req.params;
     const userId = req.user?.id;
-    const { title, description, target_date, status } = req.body;
 
-    const goal = db.prepare('SELECT * FROM primary_goals WHERE id = ? AND user_id = ?').get(goalId, userId);
+    const existing = db.prepare('SELECT * FROM primary_goals WHERE id = ? AND user_id = ?').get(goalId, userId) as PrimaryGoal | undefined;
 
-    if (!goal) {
+    if (!existing) {
       return res.status(404).json({ success: false, data: null, error: 'Goal not found' });
     }
 
+    const title = req.body.title ?? existing.title;
+    const description = req.body.description ?? existing.description;
+    const target_date = req.body.target_date ?? existing.target_date;
+    const status = req.body.status ?? existing.status;
     const now = new Date().toISOString();
 
     const stmt = db.prepare(`
@@ -383,7 +412,7 @@ router.put('/:goalId', (req: Request, res: Response) => {
       WHERE id = ?
     `);
 
-    stmt.run(title, description || null, target_date || null, status || 'active', now, goalId);
+    stmt.run(title, description, target_date, status, now, goalId);
 
     const updatedGoal = db.prepare('SELECT * FROM primary_goals WHERE id = ?').get(goalId);
 

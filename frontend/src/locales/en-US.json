@@ -72,7 +72,17 @@
     "failedCreateApiKey": "Failed to create API key",
     "newApiKeyGenerated": "New API key generated. Copy and store it securely.",
     "deleteGoalTitle": "Delete Goal",
-    "deleteGoalMessage": "Are you sure you want to delete this goal? This cannot be undone."
+    "deleteGoalMessage": "Are you sure you want to delete this goal? This cannot be undone.",
+    "markComplete": "Complete",
+    "archive": "Archive",
+    "reactivate": "Reactivate",
+    "status_active": "Active",
+    "status_completed": "Completed",
+    "status_archived": "Archived",
+    "filter_active": "Active",
+    "filter_completed": "Completed",
+    "filter_archived": "Archived",
+    "filter_all": "All"
   },
 
   "goalGrid": {
@@ -142,7 +152,12 @@
     "addActionButton": "+ Add action",
     "deleteActionTitle": "Delete Action",
     "deleteActionMessage": "Delete action \"{{title}}\"? This cannot be undone.",
-    "addSubGoalGrid": "Add Sub-Goal {{position}}"
+    "addSubGoalGrid": "Add Sub-Goal {{position}}",
+    "markComplete": "Complete",
+    "archive": "Archive",
+    "reactivate": "Reactivate",
+    "status_completed": "This goal is completed",
+    "status_archived": "This goal is archived"
   },
 
   "agents": {
@@ -324,7 +339,25 @@
     "guestbookPerPageDesc": "Number of AI agent guestbook entries shown per page.",
 
     "language": "Language",
-    "languageDesc": "Choose your preferred display language."
+    "languageDesc": "Choose your preferred display language.",
+
+    "tabAccount": "Account",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Switch between light and dark themes.",
+    "enableDarkMode": "Enable dark mode"
+  },
+
+  "account": {
+    "tabAccount": "Account",
+    "changePassword": "Change Password",
+    "changePasswordDesc": "Update your account password. You must enter your current password to confirm.",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "changePasswordButton": "Change Password",
+    "passwordChanged": "Password changed successfully.",
+    "passwordsDoNotMatch": "New passwords do not match.",
+    "passwordMinLength": "Password must be at least 6 characters."
   },
 
   "share": {

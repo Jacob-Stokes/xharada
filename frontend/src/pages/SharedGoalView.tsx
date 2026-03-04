@@ -105,41 +105,41 @@ export default function SharedGoalView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-500">{t('sharedGoal.loadingSharedGoal')}</p>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-500 dark:text-gray-400">{t('sharedGoal.loadingSharedGoal')}</p>
       </div>
     );
   }
 
   if (error || !goal) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('sharedGoal.unableToLoad')}</h2>
-          <p className="text-gray-600">{error || t('sharedGoal.linkExpiredFallback')}</p>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md text-center">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('sharedGoal.unableToLoad')}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{error || t('sharedGoal.linkExpiredFallback')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-6">
       {/* Header */}
       <div className="container mx-auto px-4 md:px-6 max-w-6xl mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{goal.title}</h1>
-            <p className="text-sm text-gray-500 mt-1">{t('sharedGoal.readOnlyView')}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{goal.title}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('sharedGoal.readOnlyView')}</p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex bg-white rounded shadow border border-gray-200">
+            <div className="flex bg-white dark:bg-gray-800 rounded shadow border border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setViewMode('compact')}
                 className={`px-4 py-2 rounded-l text-sm transition-colors ${
                   viewMode === 'compact'
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 {t('sharedGoal.compact')}
@@ -149,7 +149,7 @@ export default function SharedGoalView() {
                 className={`px-4 py-2 rounded-r text-sm transition-colors ${
                   viewMode === 'full'
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 {t('sharedGoal.fullGrid')}
@@ -157,13 +157,13 @@ export default function SharedGoalView() {
             </div>
 
             {viewMode === 'full' && (
-              <div className="flex bg-white rounded shadow border border-gray-200">
+              <div className="flex bg-white dark:bg-gray-800 rounded shadow border border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setGridAspect('square')}
                   className={`px-4 py-2 rounded-l text-sm transition-colors ${
                     gridAspect === 'square'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('sharedGoal.square')}
@@ -173,7 +173,7 @@ export default function SharedGoalView() {
                   className={`px-4 py-2 rounded-r text-sm transition-colors ${
                     gridAspect === 'rectangle'
                       ? 'bg-green-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   {t('sharedGoal.rectangle')}
@@ -204,13 +204,13 @@ export default function SharedGoalView() {
             />
 
             {shareSettings?.show_guestbook && guestbook.length > 0 && (
-              <div className="mt-8 bg-white rounded-lg shadow-lg p-8">
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 <Guestbook preloadedEntries={guestbook} readOnly />
               </div>
             )}
           </>
         ) : (
-          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 md:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3, 8, 0, 4, 7, 6, 5].map((pos) => {
                 if (pos === 0) {
@@ -229,7 +229,7 @@ export default function SharedGoalView() {
                   return (
                     <div
                       key={`empty-${pos}`}
-                      className="bg-gray-100 p-6 rounded-lg flex items-center justify-center min-h-[120px] border-2 border-dashed border-gray-300"
+                      className="bg-gray-100 dark:bg-gray-900 p-6 rounded-lg flex items-center justify-center min-h-[120px] border-2 border-dashed border-gray-300 dark:border-gray-600"
                     >
                       <span className="text-gray-400 text-sm">{t('sharedGoal.position', { pos })}</span>
                     </div>
@@ -247,7 +247,7 @@ export default function SharedGoalView() {
                         <div
                           key={action.id}
                           onClick={() => setSelectedAction(action)}
-                          className="text-sm text-gray-700 bg-white rounded px-2 py-1 cursor-pointer hover:bg-green-50 transition-colors"
+                          className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded px-2 py-1 cursor-pointer hover:bg-green-50 transition-colors"
                         >
                           {action.title}
                         </div>
@@ -270,20 +270,20 @@ export default function SharedGoalView() {
       {/* Action detail modal */}
       {selectedAction && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">{selectedAction.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedAction.title}</h2>
                 <button
                   onClick={() => setSelectedAction(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none"
                 >
                   &times;
                 </button>
               </div>
 
               {selectedAction.description && (
-                <div className="prose prose-sm max-w-none text-gray-700 mb-4">
+                <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300 mb-4">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {selectedAction.description}
                   </ReactMarkdown>
@@ -292,12 +292,12 @@ export default function SharedGoalView() {
 
               {shareSettings?.show_logs && selectedAction.logs && selectedAction.logs.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-800 mb-3">{t('sharedGoal.activityLogs')}</h3>
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">{t('sharedGoal.activityLogs')}</h3>
                   <div className="space-y-3">
                     {selectedAction.logs.map((log) => (
-                      <div key={log.id} className="border border-gray-200 rounded-lg p-3">
+                      <div key={log.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-gray-500 uppercase">
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                             {log.log_type} {log.mood && getMoodEmoji(log.mood)}
                           </span>
                           <span className="text-xs text-gray-400">
@@ -305,7 +305,7 @@ export default function SharedGoalView() {
                           </span>
                         </div>
                         {log.content && (
-                          <div className="prose prose-sm max-w-none text-gray-700">
+                          <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {log.content}
                             </ReactMarkdown>
@@ -323,7 +323,7 @@ export default function SharedGoalView() {
               )}
 
               {shareSettings?.show_logs && (!selectedAction.logs || selectedAction.logs.length === 0) && (
-                <p className="text-sm text-gray-500">{t('sharedGoal.noActivityLogs')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('sharedGoal.noActivityLogs')}</p>
               )}
 
               {!shareSettings?.show_logs && (

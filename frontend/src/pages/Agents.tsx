@@ -90,14 +90,14 @@ export default function Agents() {
 
   const renderGoalOverview = () => {
     if (!brief || brief.goals.length === 0) {
-      return <p className="text-gray-500">{t('agents.noGoals')}</p>;
+      return <p className="text-gray-500 dark:text-gray-400">{t('agents.noGoals')}</p>;
     }
     return brief.goals.map((goal) => (
-      <div key={goal.id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+      <div key={goal.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">{goal.title}</h3>
-            <p className="text-sm text-gray-500 capitalize">{t('common.status')}{goal.status}</p>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{goal.title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{t('common.status')}{goal.status}</p>
           </div>
           <Link
             to={`/goal/${goal.id}`}
@@ -110,18 +110,18 @@ export default function Agents() {
           {goal.subGoals.map((sg) => (
             <div
               key={sg.id}
-              className="rounded border border-gray-100 bg-gray-50 px-3 py-2 text-sm flex flex-col gap-1"
+              className="rounded border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-sm flex flex-col gap-1"
             >
               <div className="flex justify-between">
                 <span className="font-medium text-gray-800">
                   #{sg.position} {sg.title}
                 </span>
-                <span className="text-gray-500 text-xs">
+                <span className="text-gray-500 dark:text-gray-400 text-xs">
                   {sg.actions.length}{t('agents.actionsCount')}
                 </span>
               </div>
               {sg.actions.length > 0 && (
-                <div className="text-xs text-gray-600 line-clamp-2">
+                <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                   {sg.actions.map((action) => action.title).join(' \u2022 ')}
                 </div>
               )}
@@ -133,15 +133,15 @@ export default function Agents() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-10 max-w-5xl">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-sm text-blue-600">{t('agents.agentBriefing')}</p>
-            <h1 className="text-4xl font-bold text-gray-900">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
               {brief?.overview.title || t('agents.agentLandingPage')}
             </h1>
-            <p className="text-gray-600 mt-2 max-w-3xl">
+            <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-3xl">
               {brief?.overview.description || t('agents.loadingBriefing')}
             </p>
           </div>
@@ -178,27 +178,27 @@ export default function Agents() {
         )}
 
         {error && (
-          <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mt-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="mt-8 bg-white rounded-lg border border-gray-200 p-6 text-gray-500">
+          <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-gray-500 dark:text-gray-400">
             {t('agents.loadingAgentBrief')}
           </div>
         ) : apiKey && brief ? (
           <>
             <section className="mt-10 grid lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900">{t('agents.apiInformation')}</h3>
-                <div className="text-sm text-gray-600 space-y-2">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('agents.apiInformation')}</h3>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   <p>
-                    {t('agents.baseUrl')}<code className="bg-gray-100 px-1 rounded">{brief.api.baseUrl}</code>
+                    {t('agents.baseUrl')}<code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{brief.api.baseUrl}</code>
                   </p>
                   <p>{t('agents.apiKeyHeader')}<code>{t('agents.xApiKeyHeader')}</code>{t('agents.headerSuffix')}</p>
                   <p>
-                    {t('agents.recommendedEndpoint')}<code className="bg-gray-100 px-1 rounded">{brief.api.summaryEndpoint}</code>
+                    {t('agents.recommendedEndpoint')}<code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{brief.api.summaryEndpoint}</code>
                   </p>
                 </div>
                 <pre className="bg-gray-900 text-green-300 text-xs p-3 rounded overflow-x-auto">
@@ -206,29 +206,29 @@ export default function Agents() {
   ${brief.api.baseUrl}${brief.api.summaryEndpoint}`}
                 </pre>
               </div>
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900">{t('agents.frameworkOverview')}</h3>
-                <p className="text-sm text-gray-600">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('agents.frameworkOverview')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {brief.overview.framework}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {t('agents.generated')}{new Date(brief.generatedAt).toLocaleString()}
                 </p>
               </div>
             </section>
 
             <section className="mt-10 grid lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-xl font-semibold mb-3">{t('agents.workflowSuggestions')}</h3>
-                <ol className="list-decimal list-inside text-sm text-gray-600 space-y-2">
+                <ol className="list-decimal list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   {brief.guidance.workflow.map((item, idx) => (
                     <li key={idx}>{item}</li>
                   ))}
                 </ol>
               </div>
-              <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-3">
                 <h3 className="text-xl font-semibold">{t('agents.etiquette')}</h3>
-                <ul className="list-disc list-inside text-sm text-gray-600 space-y-2">
+                <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                   {brief.guidance.etiquette.map((item, idx) => (
                     <li key={idx}>{item}</li>
                   ))}
@@ -237,7 +237,7 @@ export default function Agents() {
             </section>
 
             <section className="mt-10 space-y-4">
-              <h2 className="text-2xl font-semibold text-gray-900">{t('agents.currentGoals')}</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{t('agents.currentGoals')}</h2>
               <div className="space-y-4">{renderGoalOverview()}</div>
             </section>
           </>

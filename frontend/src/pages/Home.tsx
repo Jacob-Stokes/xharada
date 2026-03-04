@@ -28,6 +28,8 @@ export default function Home() {
   const [allowQueryParamAuth, setAllowQueryParamAuth] = useState(true);
   const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<'active' | 'completed' | 'archived' | 'all'>('active');
+  const [openMenuGoalId, setOpenMenuGoalId] = useState<string | null>(null);
   const { settings: displaySettings } = useDisplaySettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -148,15 +150,29 @@ export default function Home() {
   };
 
   const perPage = displaySettings.goalsPerPage;
-  const totalPages = Math.max(1, Math.ceil(goals.length / perPage));
+  const filteredGoals = useMemo(
+    () => statusFilter === 'all' ? goals : goals.filter(g => g.status === statusFilter),
+    [goals, statusFilter]
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredGoals.length / perPage));
   const safePage = Math.min(currentPage, totalPages);
   const paginatedGoals = useMemo(
-    () => goals.slice((safePage - 1) * perPage, safePage * perPage),
-    [goals, safePage, perPage]
+    () => filteredGoals.slice((safePage - 1) * perPage, safePage * perPage),
+    [filteredGoals, safePage, perPage]
   );
 
+  const handleUpdateStatus = async (goalId: string, status: string) => {
+    try {
+      await api.updateGoal(goalId, { status });
+      setOpenMenuGoalId(null);
+      loadGoals();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -172,8 +188,8 @@ export default function Home() {
               <rect x="200" y="200" width="100" height="100" fill="hsl(300, 100%, 75%)" stroke="white" strokeWidth="2"/>
             </svg>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">xharada</h1>
-              <p className="text-gray-600 mt-2">Your Goal Planning System</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">xharada</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">Your Goal Planning System</p>
             </div>
           </div>
           <div className="flex gap-3 flex-wrap justify-end">
@@ -186,13 +202,13 @@ export default function Home() {
             <Link
               to="/settings"
               state={{ from: location.pathname }}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded hover:bg-gray-100"
+              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               {t('home.settings')}
             </Link>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded hover:bg-gray-100"
+              className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               {t('home.logout')}
             </button>
@@ -200,20 +216,20 @@ export default function Home() {
         </header>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4">{t('home.createNewGoal')}</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-semibold dark:text-gray-100 mb-4">{t('home.createNewGoal')}</h2>
           <form onSubmit={handleCreateGoal} className="flex gap-4">
             <input
               type="text"
               value={newGoalTitle}
               onChange={(e) => setNewGoalTitle(e.target.value)}
               placeholder={t('home.enterGoalTitle')}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             />
             <button
               type="submit"
@@ -224,45 +240,127 @@ export default function Home() {
           </form>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-4">{t('home.yourGoals')}</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold dark:text-gray-100">{t('home.yourGoals')}</h2>
+            <div className="flex gap-1">
+              {(['active', 'completed', 'archived', 'all'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => { setStatusFilter(filter); setCurrentPage(1); }}
+                  className={`px-3 py-1 text-sm rounded ${
+                    statusFilter === filter ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {t(`home.filter_${filter}`)}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {loading ? (
-            <p className="text-gray-500">{t('home.loadingGoals')}</p>
-          ) : goals.length === 0 ? (
-            <p className="text-gray-500">{t('home.noGoals')}</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('home.loadingGoals')}</p>
+          ) : filteredGoals.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">{t('home.noGoals')}</p>
           ) : (
             <>
               <div className="grid gap-4">
                 {paginatedGoals.map((goal) => (
                   <div
                     key={goal.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900">{goal.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{goal.title}</h3>
                         {goal.description && (
-                          <p className="text-gray-600 mt-1">{goal.description}</p>
+                          <p className="text-gray-600 dark:text-gray-400 mt-1">{goal.description}</p>
                         )}
-                        <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                          <span className="capitalize">{t('common.status')}{goal.status}</span>
+                        <div className="flex gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400 items-center">
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            goal.status === 'active' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                            goal.status === 'completed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                            'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            {t(`home.status_${goal.status}`)}
+                          </span>
                           <span>{t('common.created')}{new Date(goal.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <Link
                           to={`/goal/${goal.id}`}
                           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
                         >
                           {t('home.viewGrid')}
                         </Link>
-                        <button
-                          onClick={() => setConfirmDeleteGoalId(goal.id)}
-                          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
-                        >
-                          {t('common.delete')}
-                        </button>
+                        {/* Three-dots menu */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenMenuGoalId(openMenuGoalId === goal.id ? null : goal.id)}
+                            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <circle cx="10" cy="4" r="1.5" />
+                              <circle cx="10" cy="10" r="1.5" />
+                              <circle cx="10" cy="16" r="1.5" />
+                            </svg>
+                          </button>
+                          {openMenuGoalId === goal.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setOpenMenuGoalId(null)} />
+                              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-20 py-1">
+                                {goal.status === 'active' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleUpdateStatus(goal.id, 'completed')}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    >
+                                      {t('home.markComplete')}
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateStatus(goal.id, 'archived')}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    >
+                                      {t('home.archive')}
+                                    </button>
+                                  </>
+                                )}
+                                {goal.status === 'completed' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleUpdateStatus(goal.id, 'active')}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    >
+                                      {t('home.reactivate')}
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateStatus(goal.id, 'archived')}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    >
+                                      {t('home.archive')}
+                                    </button>
+                                  </>
+                                )}
+                                {goal.status === 'archived' && (
+                                  <button
+                                    onClick={() => handleUpdateStatus(goal.id, 'active')}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                  >
+                                    {t('home.reactivate')}
+                                  </button>
+                                )}
+                                <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                                <button
+                                  onClick={() => { setOpenMenuGoalId(null); setConfirmDeleteGoalId(goal.id); }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                >
+                                  {t('common.delete')}
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -271,19 +369,19 @@ export default function Home() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <p className="text-sm text-gray-500">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t dark:border-gray-700">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {t('home.showingRange', {
                       start: (safePage - 1) * perPage + 1,
-                      end: Math.min(safePage * perPage, goals.length),
-                      total: goals.length,
+                      end: Math.min(safePage * perPage, filteredGoals.length),
+                      total: filteredGoals.length,
                     })}
                   </p>
                   <div className="flex gap-1">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={safePage === 1}
-                      className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-300"
                     >
                       {t('home.prev')}
                     </button>
@@ -291,8 +389,8 @@ export default function Home() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-1 text-sm border rounded ${
-                          page === safePage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'
+                        className={`px-3 py-1 text-sm border dark:border-gray-600 rounded ${
+                          page === safePage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300'
                         }`}
                       >
                         {page}
@@ -301,7 +399,7 @@ export default function Home() {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={safePage === totalPages}
-                      className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-300"
                     >
                       {t('home.next')}
                     </button>
@@ -313,7 +411,7 @@ export default function Home() {
         </div>
 
         {/* Guestbook */}
-        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
           <Guestbook targetType="user" />
         </div>
       </div>
@@ -321,12 +419,12 @@ export default function Home() {
       {/* Agent Landing Dialog */}
       {showAgentDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">{t('home.agentLandingPage')}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('home.agentLandingPage')}</h2>
               <button
                 onClick={() => setShowAgentDialog(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
               >
                 &times;
               </button>
@@ -334,7 +432,7 @@ export default function Home() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('home.pasteApiKey')}
                 </label>
                 <input
@@ -342,7 +440,7 @@ export default function Home() {
                   value={pastedApiKey}
                   onChange={(e) => setPastedApiKey(e.target.value)}
                   placeholder={t('home.pasteApiKeyPlaceholder')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -357,7 +455,7 @@ export default function Home() {
                   </button>
                   <Link
                     to="/settings"
-                    className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
                     onClick={() => setShowAgentDialog(false)}
                   >
                     {t('home.manageKeysInSettings')}
@@ -377,7 +475,7 @@ export default function Home() {
               {pastedApiKey.trim() && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {t('home.agentLandingUrl')}
                     </label>
                     <div className="space-y-3">
@@ -386,7 +484,7 @@ export default function Home() {
                           type="text"
                           value={getAgentLandingUrl()}
                           readOnly
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-100 text-sm"
                         />
                         <button
                           onClick={handleCopyUrl}
@@ -401,7 +499,7 @@ export default function Home() {
                             type="text"
                             value={getAgentLandingUrl('json')}
                             readOnly
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-100 text-sm"
                           />
                           <button
                             onClick={() => {
@@ -417,7 +515,7 @@ export default function Home() {
                     </div>
                     {allowQueryParamAuth ? (
                       <>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           {t('home.shareUrlInfo')}
                         </p>
                         <p className="text-xs text-amber-600 mt-1">
@@ -425,7 +523,7 @@ export default function Home() {
                         </p>
                       </>
                     ) : (
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         {t('home.jsonUrlDisabled')}<Link to="/settings" className="text-blue-600 underline" onClick={() => setShowAgentDialog(false)}>{t('home.jsonUrlDisabledSettings')}</Link>{t('home.jsonUrlDisabledSuffix')}
                       </p>
                     )}
@@ -441,7 +539,7 @@ export default function Home() {
                     <Link
                       to="/settings"
                       onClick={() => setShowAgentDialog(false)}
-                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-center"
+                      className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-center"
                     >
                       {t('home.manageApiKeys')}
                     </Link>

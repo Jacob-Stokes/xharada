@@ -34,9 +34,17 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<T
 export const api = {
   // Auth
   getMe: () => apiRequest<any>('/api/auth/me'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiRequest<any>('/api/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 
   // Goals
-  getGoals: () => apiRequest<any[]>('/api/goals'),
+  getGoals: (q?: string) => {
+    const query = q ? `?q=${encodeURIComponent(q)}` : '';
+    return apiRequest<any[]>(`/api/goals${query}`);
+  },
   getGoal: (id: string) => apiRequest<any>(`/api/goals/${id}`),
   getGoalTree: (id: string) => apiRequest<any>(`/api/goals/${id}/tree`),
   createGoal: (data: any) => apiRequest<any>('/api/goals', {

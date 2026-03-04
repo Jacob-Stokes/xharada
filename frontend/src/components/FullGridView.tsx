@@ -83,7 +83,7 @@ export default function FullGridView({
   };
 
   const centerBackgroundClass =
-    centerBackdrop === 'page' ? 'bg-gray-100 border-gray-300' : 'bg-white border-gray-200';
+    centerBackdrop === 'page' ? 'bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-600' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
 
   const renderCenterCell = () => {
     if (centerLayout === 'radial') {
@@ -124,7 +124,7 @@ export default function FullGridView({
                   >
                     {subGoal ? subGoal.title : t('fullGrid.subGoalPosition', { position: bridge.position })}
                   </div>
-                  <div className="mt-1 text-gray-500" aria-hidden="true">
+                  <div className="mt-1 text-gray-500 dark:text-gray-400" aria-hidden="true">
                     {bridge.arrow}
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export default function FullGridView({
 
       if (!subGoal) {
         if (readOnly) {
-          return <div className="bg-gray-100 border border-gray-200 h-full"></div>;
+          return <div className="bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 h-full"></div>;
         }
         return (
           <div
@@ -305,7 +305,7 @@ export default function FullGridView({
       const subGoal = getSubGoalAtPosition(actionInfo.subGoalPos);
 
       if (!subGoal) {
-        return <div className="bg-gray-100 border border-gray-200 h-full"></div>;
+        return <div className="bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 h-full"></div>;
       }
 
       const action = subGoal.actions.find(a => a.position === actionInfo.actionPos);
@@ -320,7 +320,7 @@ export default function FullGridView({
 
       if (!action) {
         if (readOnly) {
-          return <div className="bg-gray-50 border border-gray-200 h-full"></div>;
+          return <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 h-full"></div>;
         }
         return (
           <div
@@ -335,7 +335,7 @@ export default function FullGridView({
                   }
                 : undefined
             }
-            className="bg-blue-50 border border-blue-200 p-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center text-xs text-gray-500 h-full"
+            className="bg-blue-50 border border-blue-200 p-1 cursor-pointer hover:bg-blue-100 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 h-full"
           >
             +
           </div>
@@ -379,11 +379,11 @@ export default function FullGridView({
       );
     }
 
-    return <div className="bg-gray-50 border border-gray-200 h-full"></div>;
+    return <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-700 h-full"></div>;
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
       <div className="overflow-x-auto">
         <div
           className={`grid grid-cols-9 gap-1 min-w-[540px] sm:min-w-0 ${gridAspect === 'square' ? 'max-w-5xl' : ''} mx-auto`}
@@ -409,7 +409,7 @@ export default function FullGridView({
         </div>
       </div>
 
-      <div className="mt-6 text-center text-sm text-gray-500 print-hidden">
+      <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 print-hidden">
         <p>{t('fullGrid.footer')}</p>
       </div>
     </div>
