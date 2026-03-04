@@ -7,7 +7,7 @@ const router = Router();
 // Get specific sub-goal with actions
 router.get('/:subgoalId', (req: Request, res: Response) => {
   try {
-    const { subgoalId } = req.params;
+    const subgoalId = req.params.subgoalId as string;
     const userId = req.user!.id;
 
     const subGoal = ownedSubGoal(subgoalId, userId) as SubGoal | null;
@@ -27,7 +27,7 @@ router.get('/:subgoalId', (req: Request, res: Response) => {
 // Update sub-goal
 router.put('/:subgoalId', (req: Request, res: Response) => {
   try {
-    const { subgoalId } = req.params;
+    const subgoalId = req.params.subgoalId as string;
     const userId = req.user!.id;
     const { title, description, position } = req.body;
 
@@ -58,7 +58,7 @@ router.put('/:subgoalId', (req: Request, res: Response) => {
 // Reorder sub-goal positions within a goal using a single statement to avoid uniqueness conflicts
 router.post('/:subgoalId/reorder', (req: Request, res: Response) => {
   try {
-    const { subgoalId } = req.params;
+    const subgoalId = req.params.subgoalId as string;
     const userId = req.user!.id;
     const { targetPosition } = req.body as { targetPosition?: number };
 
@@ -127,7 +127,7 @@ router.post('/:subgoalId/reorder', (req: Request, res: Response) => {
 // Delete sub-goal
 router.delete('/:subgoalId', (req: Request, res: Response) => {
   try {
-    const { subgoalId } = req.params;
+    const subgoalId = req.params.subgoalId as string;
     const userId = req.user!.id;
 
     if (!ownedSubGoal(subgoalId, userId)) {
@@ -149,7 +149,7 @@ router.delete('/:subgoalId', (req: Request, res: Response) => {
 // Get actions for sub-goal
 router.get('/:subgoalId/actions', (req: Request, res: Response) => {
   try {
-    const { subgoalId } = req.params;
+    const subgoalId = req.params.subgoalId as string;
     const userId = req.user!.id;
 
     if (!ownedSubGoal(subgoalId, userId)) {
@@ -167,7 +167,7 @@ router.get('/:subgoalId/actions', (req: Request, res: Response) => {
 // Create action item
 router.post('/:subgoalId/actions', (req: Request, res: Response) => {
   try {
-    const { subgoalId } = req.params;
+    const subgoalId = req.params.subgoalId as string;
     const userId = req.user!.id;
     const { position, title, description, due_date } = req.body;
 
