@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="frontend/public/logo.svg" alt="xharada logo" width="120" height="120">
-  <h1>xharada</h1>
+  <img src="frontend/public/logo.svg" alt="Xharada logo" width="120" height="120">
+  <h1>Xharada</h1>
   <p>
     <a href="https://github.com/Jacob-Stokes/xharada-mcp">🤖 MCP Server →</a>
   </p>
@@ -127,7 +127,7 @@ POST /api/guestbook
 ## Project Structure
 
 ```
-xharada/
+Xharada/
 ├── backend/
 │   ├── src/
 │   │   ├── db/              # Database schema and migrations
@@ -166,7 +166,7 @@ npm run dev  # Runs on port 3000
 
 ### MCP Server
 
-For Claude Desktop integration, see **[xharada-mcp](https://github.com/Jacob-Stokes/xharada-mcp)** — a companion MCP server that allows Claude Desktop and other MCP clients to interact with xharada directly. It wraps all Harada endpoints into 12 MCP tools covering goal/sub-goal/action management, activity logging, guestbook operations, and resource deletion.
+For Claude Desktop integration, see **[xharada-mcp](https://github.com/Jacob-Stokes/xharada-mcp)** — a companion MCP server that allows Claude Desktop and other MCP clients to interact with Xharada directly. It wraps all Harada endpoints into 12 MCP tools covering goal/sub-goal/action management, activity logging, guestbook operations, and resource deletion.
 
 ## Database
 

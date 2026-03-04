@@ -29,7 +29,7 @@
   },
 
   "login": {
-    "title": "xharada",
+    "title": "Xharada",
     "subtitle": "目標にアクセスするにはサインインしてください",
     "username": "ユーザー名",
     "password": "パスワード",
@@ -161,7 +161,7 @@
   },
 
   "agents": {
-    "agentBriefing": "xharada \u00b7 エージェントブリーフィング",
+    "agentBriefing": "Xharada \u00b7 エージェントブリーフィング",
     "agentLandingPage": "エージェントランディングページ",
     "loadingBriefing": "ブリーフィング情報を読み込み中...",
     "manageApiKeys": "APIキーを管理",

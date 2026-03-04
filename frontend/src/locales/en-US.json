@@ -29,7 +29,7 @@
   },
 
   "login": {
-    "title": "xharada",
+    "title": "Xharada",
     "subtitle": "Sign in to access your goals",
     "username": "Username",
     "password": "Password",
@@ -161,7 +161,7 @@
   },
 
   "agents": {
-    "agentBriefing": "xharada \u00b7 Agent Briefing",
+    "agentBriefing": "Xharada \u00b7 Agent Briefing",
     "agentLandingPage": "Agent Landing Page",
     "loadingBriefing": "Loading briefing information...",
     "manageApiKeys": "Manage API Keys",

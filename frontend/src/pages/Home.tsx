@@ -188,7 +188,7 @@ export default function Home() {
               <rect x="200" y="200" width="100" height="100" fill="hsl(300, 100%, 75%)" stroke="white" strokeWidth="2"/>
             </svg>
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">xharada</h1>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">Xharada</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">Your Goal Planning System</p>
             </div>
           </div>
