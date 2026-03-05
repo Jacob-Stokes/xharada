@@ -48,8 +48,8 @@ Create a `docker-compose.yml`:
 version: '3.8'
 
 services:
-  api:
-    image: ghcr.io/jacob-stokes/xharada-backend:latest
+  xharada:
+    image: ghcr.io/jacob-stokes/xharada:latest
     ports:
       - "3001:3001"
     volumes:
@@ -59,14 +59,6 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - SESSION_SECRET=change-me-to-something-secure
-    restart: unless-stopped
-
-  frontend:
-    image: ghcr.io/jacob-stokes/xharada-frontend:latest
-    ports:
-      - "3000:80"
-    depends_on:
-      - api
     restart: unless-stopped
 ```
 
@@ -95,8 +87,7 @@ docker-compose down
 ```
 
 Access:
-- **Frontend**: http://localhost:3000
-- **API**: http://localhost:3001
+- **App**: http://localhost:3001
 - **Health Check**: http://localhost:3001/health
 
 ### First Time Setup
@@ -175,16 +166,15 @@ Xharada/
 │   │   ├── routes/          # API endpoints
 │   │   ├── middleware/      # Auth middleware
 │   │   └── index.ts         # Express server
-│   ├── Dockerfile
 │   └── package.json
 ├── frontend/
 │   ├── src/
 │   │   ├── pages/           # React pages
 │   │   ├── components/      # Reusable components
 │   │   └── api/             # API client
-│   ├── Dockerfile
 │   └── package.json
 ├── data/                    # SQLite database (gitignored)
+├── Dockerfile               # Multi-stage build (frontend + backend)
 ├── docker-compose.yml
 └── README.md
 ```

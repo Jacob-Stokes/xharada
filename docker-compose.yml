@@ -1,28 +1,15 @@
 version: '3.8'
 
 services:
-  api:
-    build: ./backend
+  xharada:
+    build: .
     ports:
       - "3001:3001"
     volumes:
       - ./data:/app/data
-      - ./backend/src:/app/src
     environment:
       - DATABASE_URL=file:/app/data/harada.db
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3001
-    restart: unless-stopped
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend/src:/app/src
-    environment:
-      - VITE_API_URL=http://localhost:3001
-      - VITE_ALLOWED_HOSTS=harada.jacobstokes.com
-    depends_on:
-      - api
+      - SESSION_SECRET=change-me-to-something-secure
     restart: unless-stopped

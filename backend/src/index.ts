@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
+import path from 'path';
 import { initDatabase } from './db/database';
 import goalsRouter from './routes/goals';
 import subgoalsRouter from './routes/subgoals';
@@ -20,7 +21,7 @@ const PORT = process.env.PORT || 3001;
 
 app.set('trust proxy', 1);
 
-// Middleware
+// Middleware — CORS only needed when frontend runs on a different origin (dev mode)
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
@@ -137,6 +138,15 @@ app.use('/api/share', requireAuth, shareManagementRouter);
 app.use('/api/shared', sharePublicRouter);
 app.use('/api/etiquette', requireAuth, etiquetteRouter);
 app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
+
+// Serve frontend static files in production (single-container mode)
+const publicDir = path.join(__dirname, '..', 'public');
+app.use(express.static(publicDir));
+
+// SPA fallback — any non-API route serves index.html for client-side routing
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
 
 // Start server
 app.listen(PORT, () => {
