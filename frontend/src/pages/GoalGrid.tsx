@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm';
 import Guestbook from '../components/Guestbook';
 import ShareGoalModal from '../components/ShareGoalModal';
 import ConfirmModal from '../components/ConfirmModal';
-import { useDisplaySettings, GoalTheme, computeColorsFromTheme, extractThemeFromSettings, paletteOptions, PaletteName } from '../context/DisplaySettingsContext';
+import { useDisplaySettings, GoalTheme, computeColorsFromTheme, extractThemeFromSettings, getAllPalettes } from '../context/DisplaySettingsContext';
 import { getReadableTextColor, lightenColor } from '../utils/color';
 
 interface ActivityLog {
@@ -112,8 +112,8 @@ export default function GoalGrid() {
   );
 
   const effectiveColors = useMemo(
-    () => computeColorsFromTheme(effectiveTheme),
-    [effectiveTheme]
+    () => computeColorsFromTheme(effectiveTheme, displaySettings.customPalettes),
+    [effectiveTheme, displaySettings.customPalettes]
   );
 
   const buildSubGoalPayload = (
@@ -1232,10 +1232,10 @@ export default function GoalGrid() {
             {/* Palette Picker */}
             <h3 className="text-sm font-semibold dark:text-gray-200 mb-2">{t('settings.colorPalette')}</h3>
             <div className="grid grid-cols-2 gap-3 mb-6">
-              {(Object.keys(paletteOptions) as PaletteName[]).map((key) => (
+              {Object.entries(getAllPalettes(displaySettings.customPalettes)).map(([key, pal]) => (
                 <button
                   key={key}
-                  onClick={() => setThemeEdit({ ...themeEdit, palette: key })}
+                  onClick={() => setThemeEdit({ ...themeEdit, palette: key, customSubGoalColors: {} })}
                   className={`p-3 rounded-lg border-2 transition-colors ${
                     themeEdit.palette === key
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
@@ -1243,11 +1243,11 @@ export default function GoalGrid() {
                   }`}
                 >
                   <div className="flex gap-1 mb-1">
-                    {paletteOptions[key].colors.map((c, i) => (
+                    {pal.colors.map((c, i) => (
                       <div key={i} className="w-5 h-5 rounded" style={{ backgroundColor: c }} />
                     ))}
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400">{paletteOptions[key].label}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{pal.label}</span>
                 </button>
               ))}
             </div>
@@ -1256,7 +1256,7 @@ export default function GoalGrid() {
             <h3 className="text-sm font-semibold dark:text-gray-200 mb-2">{t('settings.customSubGoalColors')}</h3>
             <div className="grid grid-cols-4 gap-3 mb-6">
               {Array.from({ length: 8 }, (_, i) => i + 1).map((pos) => {
-                const previewColors = computeColorsFromTheme(themeEdit);
+                const previewColors = computeColorsFromTheme(themeEdit, displaySettings.customPalettes);
                 return (
                   <div key={pos} className="flex items-center gap-2">
                     <input

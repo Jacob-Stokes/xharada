@@ -5,6 +5,7 @@ import { api, API_URL } from '../api/client';
 import ConfirmModal from '../components/ConfirmModal';
 import Guestbook from '../components/Guestbook';
 import { useDisplaySettings } from '../context/DisplaySettingsContext';
+import LogoGrid from '../components/LogoGrid';
 
 interface Goal {
   id: string;
@@ -176,20 +177,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <svg width="64" height="64" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-              <rect x="0" y="0" width="100" height="100" fill="hsl(0, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="100" y="0" width="100" height="100" fill="hsl(30, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="200" y="0" width="100" height="100" fill="hsl(60, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="0" y="100" width="100" height="100" fill="hsl(120, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="100" y="100" width="100" height="100" fill="hsl(180, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="200" y="100" width="100" height="100" fill="hsl(210, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="0" y="200" width="100" height="100" fill="hsl(240, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="100" y="200" width="100" height="100" fill="hsl(270, 100%, 75%)" stroke="white" strokeWidth="2"/>
-              <rect x="200" y="200" width="100" height="100" fill="hsl(300, 100%, 75%)" stroke="white" strokeWidth="2"/>
-            </svg>
+            <LogoGrid theme={displaySettings.appTheme} />
             <div>
               <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">Xharada</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Your Goal Planning System</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-2" >Goal Planning System</p>
             </div>
           </div>
           <div className="flex gap-3 flex-wrap justify-end">

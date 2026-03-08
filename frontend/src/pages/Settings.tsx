@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import ConfirmModal from '../components/ConfirmModal';
 import { API_URL, api } from '../api/client';
-import { useDisplaySettings, paletteOptions, PaletteName, appThemeOptions, AppThemeName } from '../context/DisplaySettingsContext';
+import { useDisplaySettings, getAllPalettes, appThemeOptions, AppThemeName } from '../context/DisplaySettingsContext';
 import { lightenColor } from '../utils/color';
 
 interface ApiKey {
@@ -79,7 +79,9 @@ export default function Settings() {
     updateSettings: updateDisplaySettings,
     setSubGoalColor,
     resetSubGoalColors,
-    computedColors
+    computedColors,
+    createCustomPalette,
+    deleteCustomPalette,
   } = useDisplaySettings();
   const previewBaseColor = computedColors[1] || '#22c55e';
   const previewActionColor = lightenColor(previewBaseColor, displaySettings.actionShadePercent);
@@ -1138,19 +1140,20 @@ curl -X POST "$API_URL/api/guestbook" \\
                 {t('settings.colorPaletteDesc')}
               </p>
               <div className="grid md:grid-cols-2 gap-4">
-                {Object.entries(paletteOptions).map(([name, option]) => {
-                  const paletteName = name as PaletteName;
-                  return (
+                {Object.entries(getAllPalettes(displaySettings.customPalettes)).map(([name, option]) => (
+                  <div
+                    key={name}
+                    className={`border rounded-lg p-4 text-left transition-colors relative ${
+                      displaySettings.palette === name
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-blue-200'
+                    }`}
+                  >
                     <button
-                      key={name}
-                      onClick={() => updateDisplaySettings({ palette: paletteName })}
-                      className={`border rounded-lg p-4 text-left transition-colors ${
-                        displaySettings.palette === paletteName
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-200'
-                      }`}
+                      className="w-full text-left"
+                      onClick={() => updateDisplaySettings({ palette: name, customSubGoalColors: {} })}
                     >
-                      <div className="font-semibold mb-2">{t('palette.' + name)}</div>
+                      <div className="font-semibold mb-2">{option.label}</div>
                       <div className="flex gap-1">
                         {option.colors.map((color, idx) => (
                           <span
@@ -1161,8 +1164,46 @@ curl -X POST "$API_URL/api/guestbook" \\
                         ))}
                       </div>
                     </button>
-                  );
-                })}
+                    {!option.builtIn && (
+                      <button
+                        onClick={() => deleteCustomPalette(name)}
+                        className="absolute top-2 right-2 text-xs text-red-500 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Save Custom Palette */}
+              <div className="mt-4 border rounded-lg p-4 border-dashed border-gray-300 dark:border-gray-600">
+                <h4 className="text-sm font-semibold mb-2">Save as Custom Palette</h4>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      placeholder="Palette name..."
+                      id="custom-palette-name"
+                      className="w-full border rounded px-3 py-2 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById('custom-palette-name') as HTMLInputElement;
+                      const label = input?.value.trim();
+                      if (!label) return;
+                      const colors = Array.from({ length: 8 }, (_, i) => computedColors[i + 1] || '#22c55e');
+                      createCustomPalette(label, colors);
+                      input.value = '';
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  >
+                    Save
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Saves the current 8 colors (including any custom overrides) as a reusable palette.
+                </p>
               </div>
             </section>
 

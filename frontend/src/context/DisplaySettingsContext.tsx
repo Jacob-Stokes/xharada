@@ -3,10 +3,15 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 export type ViewMode = 'compact' | 'full';
 export type CenterLayout = 'single' | 'radial';
 export type CenterBackdrop = 'page' | 'card';
-export type PaletteName = 'classic' | 'rainbow' | 'pastel' | 'mono';
 export type AppThemeName = 'default' | 'academia';
 
-export const appThemeOptions: Record<AppThemeName, { label: string; description: string; defaultPalette: PaletteName }> = {
+export interface PaletteDefinition {
+  label: string;
+  colors: string[];
+  builtIn?: boolean;
+}
+
+export const appThemeOptions: Record<AppThemeName, { label: string; description: string; defaultPalette: string }> = {
   default: {
     label: 'Default',
     description: 'Clean sans-serif, neutral grays',
@@ -19,10 +24,37 @@ export const appThemeOptions: Record<AppThemeName, { label: string; description:
   },
 };
 
+export const builtInPalettes: Record<string, PaletteDefinition> = {
+  classic: {
+    label: 'Classic Greens',
+    colors: ['#22c55e', '#15803d', '#22c55e', '#15803d', '#22c55e', '#15803d', '#22c55e', '#15803d'],
+    builtIn: true,
+  },
+  rainbow: {
+    label: 'Rainbow',
+    colors: ['#f97316', '#facc15', '#22c55e', '#14b8a6', '#0ea5e9', '#6366f1', '#ec4899', '#ef4444'],
+    builtIn: true,
+  },
+  pastel: {
+    label: 'Pastel',
+    colors: ['#fecdd3', '#fde68a', '#d9f99d', '#bae6fd', '#ddd6fe', '#fde68a', '#fecdd3', '#c4b5fd'],
+    builtIn: true,
+  },
+  mono: {
+    label: 'Greyscale',
+    colors: ['#374151', '#9ca3af', '#374151', '#9ca3af', '#374151', '#9ca3af', '#374151', '#9ca3af'],
+    builtIn: true,
+  },
+};
+
+// Keep for backward compat — same object
+export const paletteOptions = builtInPalettes;
+
 export interface DisplaySettings {
   defaultView: ViewMode;
   appTheme: AppThemeName;
-  palette: PaletteName;
+  palette: string;
+  customPalettes: Record<string, { label: string; colors: string[] }>;
   customSubGoalColors: Record<number, string>;
   inheritActionColors: boolean;
   actionShadePercent: number;
@@ -34,27 +66,8 @@ export interface DisplaySettings {
   darkMode: boolean;
 }
 
-export const paletteOptions: Record<PaletteName, { label: string; colors: string[] }> = {
-  classic: {
-    label: 'Classic Greens',
-    colors: ['#22c55e', '#86efac', '#15803d', '#bbf7d0', '#4ade80', '#166534', '#86efac', '#22c55e'],
-  },
-  rainbow: {
-    label: 'Rainbow',
-    colors: ['#f97316', '#facc15', '#22c55e', '#14b8a6', '#0ea5e9', '#6366f1', '#ec4899', '#ef4444'],
-  },
-  pastel: {
-    label: 'Pastel',
-    colors: ['#fecdd3', '#fde68a', '#d9f99d', '#bae6fd', '#ddd6fe', '#fde68a', '#fecdd3', '#c4b5fd'],
-  },
-  mono: {
-    label: 'Greyscale',
-    colors: ['#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db', '#4b5563', '#1f2937'],
-  },
-};
-
 export interface GoalTheme {
-  palette: PaletteName;
+  palette: string;
   customSubGoalColors: Record<number, string>;
   inheritActionColors: boolean;
   actionShadePercent: number;
@@ -62,8 +75,20 @@ export interface GoalTheme {
   centerBackdrop: CenterBackdrop;
 }
 
-export function computeColorsFromTheme(theme: GoalTheme): Record<number, string> {
-  const palette = paletteOptions[theme.palette]?.colors || paletteOptions.classic.colors;
+export function getAllPalettes(customPalettes: Record<string, { label: string; colors: string[] }> = {}): Record<string, PaletteDefinition> {
+  const custom: Record<string, PaletteDefinition> = {};
+  for (const [id, p] of Object.entries(customPalettes)) {
+    custom[id] = { ...p, builtIn: false };
+  }
+  return { ...builtInPalettes, ...custom };
+}
+
+export function lookupPaletteColors(paletteName: string, customPalettes: Record<string, { label: string; colors: string[] }> = {}): string[] {
+  return builtInPalettes[paletteName]?.colors || customPalettes[paletteName]?.colors || builtInPalettes.classic.colors;
+}
+
+export function computeColorsFromTheme(theme: GoalTheme, customPalettes: Record<string, { label: string; colors: string[] }> = {}): Record<number, string> {
+  const palette = lookupPaletteColors(theme.palette, customPalettes);
   const mapping: Record<number, string> = {};
   for (let i = 1; i <= 8; i += 1) {
     mapping[i] = theme.customSubGoalColors[i] || palette[i - 1] || palette[0];
@@ -88,6 +113,7 @@ const defaultSettings: DisplaySettings = {
   defaultView: 'compact',
   appTheme: 'default',
   palette: 'classic',
+  customPalettes: {},
   customSubGoalColors: {},
   inheritActionColors: true,
   actionShadePercent: 60,
@@ -105,6 +131,8 @@ interface DisplaySettingsContextValue {
   setSubGoalColor: (position: number, color: string | null) => void;
   resetSubGoalColors: () => void;
   computedColors: Record<number, string>;
+  createCustomPalette: (label: string, colors: string[]) => string;
+  deleteCustomPalette: (id: string) => void;
 }
 
 const DisplaySettingsContext = createContext<DisplaySettingsContextValue | null>(null);
@@ -139,13 +167,11 @@ export function DisplaySettingsProvider({ children }: { children: React.ReactNod
 
   // Apply app theme CSS class to <html>
   useEffect(() => {
-    // Remove all theme classes
     Object.keys(appThemeOptions).forEach((theme) => {
       if (theme !== 'default') {
         document.documentElement.classList.remove(theme);
       }
     });
-    // Add current theme class
     if (settings.appTheme !== 'default') {
       document.documentElement.classList.add(settings.appTheme);
     }
@@ -179,14 +205,38 @@ export function DisplaySettingsProvider({ children }: { children: React.ReactNod
     setSettings((prev) => ({ ...prev, customSubGoalColors: {} }));
   };
 
+  const createCustomPalette = (label: string, colors: string[]): string => {
+    const id = 'custom-' + Date.now();
+    setSettings((prev) => ({
+      ...prev,
+      customPalettes: { ...prev.customPalettes, [id]: { label, colors } },
+      palette: id,
+      customSubGoalColors: {},
+    }));
+    return id;
+  };
+
+  const deleteCustomPalette = (id: string) => {
+    setSettings((prev) => {
+      const next = { ...prev.customPalettes };
+      delete next[id];
+      return {
+        ...prev,
+        customPalettes: next,
+        // If we just deleted the active palette, fall back to classic
+        palette: prev.palette === id ? 'classic' : prev.palette,
+      };
+    });
+  };
+
   const computedColors = useMemo(() => {
-    const palette = paletteOptions[settings.palette]?.colors || paletteOptions.classic.colors;
+    const palette = lookupPaletteColors(settings.palette, settings.customPalettes);
     const mapping: Record<number, string> = {};
     for (let i = 1; i <= 8; i += 1) {
       mapping[i] = settings.customSubGoalColors[i] || palette[i - 1] || palette[0];
     }
     return mapping;
-  }, [settings.palette, settings.customSubGoalColors]);
+  }, [settings.palette, settings.customSubGoalColors, settings.customPalettes]);
 
   const value: DisplaySettingsContextValue = {
     settings,
@@ -194,6 +244,8 @@ export function DisplaySettingsProvider({ children }: { children: React.ReactNod
     setSubGoalColor,
     resetSubGoalColors,
     computedColors,
+    createCustomPalette,
+    deleteCustomPalette,
   };
 
   return (
