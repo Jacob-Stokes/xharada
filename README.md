@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/public/logo.svg" alt="Xharada logo" width="120" height="120">
+  <img src="frontend/public/logo.svg?v=2" alt="Xharada logo" width="120" height="120">
   <h1>Xharada</h1>
 </div>
 
