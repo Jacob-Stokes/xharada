@@ -1,5 +1,6 @@
 <div align="left">
-  <img src="frontend/public/logo.svg?v=2" alt="Xharada logo" width="120" height="120"> <sup>原田メソッド</sup>
+  <img src="frontend/public/logo.svg?v=2" alt="Xharada logo" width="120" height="120">
+  <sup>原田メソッド</sup>
   <h1>Xharada</h1>
 </div>
 
