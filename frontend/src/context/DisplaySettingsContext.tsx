@@ -117,8 +117,8 @@ const STORAGE_KEY = 'haradaDisplaySettings';
 
 const defaultSettings: DisplaySettings = {
   defaultView: 'compact',
-  appTheme: 'default',
-  palette: 'classic',
+  appTheme: 'academia',
+  palette: 'mono',
   customPalettes: {},
   customSubGoalColors: {},
   inheritActionColors: true,

@@ -1,20 +1,19 @@
 <svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-  <!-- 3x3 Harada grid with rainbow colors at 75% lightness -->
-  <!-- HSL format: hsl(hue, 100%, 75%) -->
+  <!-- 3x3 Harada grid with academia theme colors -->
 
   <!-- Top row -->
-  <rect x="0" y="0" width="100" height="100" fill="hsl(0, 100%, 75%)" stroke="white" stroke-width="2"/>     <!-- Red -->
-  <rect x="100" y="0" width="100" height="100" fill="hsl(30, 100%, 75%)" stroke="white" stroke-width="2"/>   <!-- Orange -->
-  <rect x="200" y="0" width="100" height="100" fill="hsl(60, 100%, 75%)" stroke="white" stroke-width="2"/>   <!-- Yellow -->
+  <rect x="0" y="0" width="100" height="100" fill="#d4c5a9" stroke="#fffff8" stroke-width="2"/>
+  <rect x="100" y="0" width="100" height="100" fill="#c8b898" stroke="#fffff8" stroke-width="2"/>
+  <rect x="200" y="0" width="100" height="100" fill="#bfae8a" stroke="#fffff8" stroke-width="2"/>
 
   <!-- Middle row -->
-  <rect x="0" y="100" width="100" height="100" fill="hsl(120, 100%, 75%)" stroke="white" stroke-width="2"/>  <!-- Green -->
-  <rect x="100" y="100" width="100" height="100" fill="hsl(180, 100%, 75%)" stroke="white" stroke-width="2"/> <!-- Cyan -->
-  <rect x="200" y="100" width="100" height="100" fill="hsl(210, 100%, 75%)" stroke="white" stroke-width="2"/> <!-- Light Blue -->
+  <rect x="0" y="100" width="100" height="100" fill="#b5a47d" stroke="#fffff8" stroke-width="2"/>
+  <rect x="100" y="100" width="100" height="100" fill="#c2b48f" stroke="#fffff8" stroke-width="2"/>
+  <rect x="200" y="100" width="100" height="100" fill="#cabf9e" stroke="#fffff8" stroke-width="2"/>
 
   <!-- Bottom row -->
-  <rect x="0" y="200" width="100" height="100" fill="hsl(240, 100%, 75%)" stroke="white" stroke-width="2"/>  <!-- Blue -->
-  <rect x="100" y="200" width="100" height="100" fill="hsl(270, 100%, 75%)" stroke="white" stroke-width="2"/> <!-- Purple -->
-  <rect x="200" y="200" width="100" height="100" fill="hsl(300, 100%, 75%)" stroke="white" stroke-width="2"/> <!-- Magenta -->
+  <rect x="0" y="200" width="100" height="100" fill="#bfae8a" stroke="#fffff8" stroke-width="2"/>
+  <rect x="100" y="200" width="100" height="100" fill="#c8b898" stroke="#fffff8" stroke-width="2"/>
+  <rect x="200" y="200" width="100" height="100" fill="#d4c5a9" stroke="#fffff8" stroke-width="2"/>
 
 </svg>
